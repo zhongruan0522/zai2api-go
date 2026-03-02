@@ -18,7 +18,7 @@ const (
 	GenerateAPI     = "https://image.z.ai/api/proxy/images/generate"
 )
 
-// OpenAI 请求结构
+// OpenAI Chat 请求结构
 type OpenAIRequest struct {
 	Model    string          `json:"model"`
 	Messages []OpenAIMessage `json:"messages"`
@@ -28,6 +28,26 @@ type OpenAIRequest struct {
 type OpenAIMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+
+// OpenAI Images Generations 请求结构
+type OpenAIImageRequest struct {
+	Model          string `json:"model"`
+	Prompt         string `json:"prompt"`
+	N              int    `json:"n"`
+	Size           string `json:"size"`
+	ResponseFormat string `json:"response_format"`
+}
+
+// OpenAI Images Generations 响应结构
+type OpenAIImageResponse struct {
+	Created int64               `json:"created"`
+	Data    []OpenAIImageData   `json:"data"`
+}
+
+type OpenAIImageData struct {
+	URL     string `json:"url,omitempty"`
+	B64JSON string `json:"b64_json,omitempty"`
 }
 
 // 智谱请求结构
@@ -331,9 +351,97 @@ func handleGetModel(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{"error": "Model not found"})
 }
 
+// handleImagesGenerations 处理 OpenAI 标准的 /images/generations 端点
+func handleImagesGenerations(c *gin.Context) {
+	var req OpenAIImageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 验证 prompt
+	if req.Prompt == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "prompt is required"})
+		return
+	}
+
+	// 从 Authorization header 获取 token
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization header"})
+		return
+	}
+
+	// 提取 Bearer token
+	re := regexp.MustCompile(`(?i)^Bearer\s+(.+)$`)
+	matches := re.FindStringSubmatch(authHeader)
+	if len(matches) < 2 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Authorization header format"})
+		return
+	}
+	token := matches[1]
+
+	// 从模型名解析分辨率和比例（忽略用户传递的 size）
+	resolution, ratio := parseModel(req.Model)
+
+	// 默认生成 1 张
+	n := req.N
+	if n <= 0 {
+		n = 1
+	}
+
+	// 生成图片
+	var imageData []OpenAIImageData
+	for i := 0; i < n; i++ {
+		zaiResp, err := generateImage(token, req.Prompt, ratio, resolution)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if zaiResp.Code != 200 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("ZAI API error: %s (code: %d)", zaiResp.Message, zaiResp.Code),
+			})
+			return
+		}
+
+		imageURL := zaiResp.Data.Image.ImageURL
+		if imageURL == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No image URL in response"})
+			return
+		}
+
+		// 根据响应格式返回 URL 或 Base64
+		if req.ResponseFormat == "b64_json" {
+			base64Data, mimeType, err := imageToBase64(imageURL)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to download image: %v", err)})
+				return
+			}
+			imageData = append(imageData, OpenAIImageData{
+				B64JSON: fmt.Sprintf("data:%s;base64,%s", mimeType, base64Data),
+			})
+		} else {
+			imageData = append(imageData, OpenAIImageData{
+				URL: imageURL,
+			})
+		}
+	}
+
+	// 返回 OpenAI 标准格式响应
+	resp := OpenAIImageResponse{
+		Created: time.Now().Unix(),
+		Data:    imageData,
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // RegisterRoutes 注册绘图模块路由
 func RegisterRoutes(r *gin.RouterGroup) {
 	r.GET("/models", handleListModels)
 	r.GET("/models/:model", handleGetModel)
 	r.POST("/chat/completions", handleChatCompletions)
+	r.POST("/images/generations", handleImagesGenerations)
 }
