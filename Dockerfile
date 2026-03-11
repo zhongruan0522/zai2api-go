@@ -1,40 +1,30 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-# Install git for go mod download
 RUN apk add --no-cache git
 
-# Copy go mod files
-COPY go.mod go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 
-# Copy source code
-COPY . .
-
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o zai2api .
+COPY backend/ .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server .
 
 # Runtime stage
 FROM alpine:3.19
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata
 
-# Copy binary from builder
-COPY --from=builder /app/zai2api .
+COPY --from=builder /server .
+COPY frontend/.next ./frontend/.next
+COPY frontend/public ./frontend/public
 
-# Set timezone
-ENV TZ=Asia/Shanghai
+ENV PORT=8080
+ENV GIN_MODE=release
 
-# Expose port
 EXPOSE 8080
 
-# Set default port
-ENV PORT=8080
-
-# Run the binary
-CMD ["./zai2api"]
+CMD ["./server"]

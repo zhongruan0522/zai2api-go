@@ -1,0 +1,192 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+class ApiClient {
+  private getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
+  }
+
+  private setToken(token: string | null) {
+    if (typeof window === 'undefined') return;
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }
+
+  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const token = this.getToken();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+    });
+
+    if (res.status === 401) {
+      this.setToken(null);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized');
+    }
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+
+    return res.json();
+  }
+
+  // Auth
+  async login(username: string, password: string) {
+    const res = await this.request<{ token: string }>('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+    this.setToken(res.token);
+    return res;
+  }
+
+  logout() {
+    this.setToken(null);
+  }
+
+  isAuthenticated() {
+    return !!this.getToken();
+  }
+
+  // Audio Tokens
+  getAudioTokens() {
+    return this.request<TokenItem[]>('/api/tokens/audio');
+  }
+
+  createAudioTokens(tokens: string[]) {
+    return this.request<{ created: number; duplicates: number }>('/api/tokens/audio', {
+      method: 'POST',
+      body: JSON.stringify({ tokens }),
+    });
+  }
+
+  deleteAudioToken(id: number) {
+    return this.request<{ message: string }>(`/api/tokens/audio/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleAudioToken(id: number) {
+    return this.request<TokenItem>(`/api/tokens/audio/${id}/toggle`, {
+      method: 'PUT',
+    });
+  }
+
+  batchDeleteAudioTokens(ids: number[]) {
+    return this.request<{ deleted: number }>('/api/tokens/audio/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  batchToggleAudioTokens(ids: number[], enable: boolean) {
+    return this.request<{ updated: number }>('/api/tokens/audio/batch-toggle', {
+      method: 'POST',
+      body: JSON.stringify({ ids, enable }),
+    });
+  }
+
+  // OCR Tokens
+  getOCRTokens() {
+    return this.request<TokenItem[]>('/api/tokens/ocr');
+  }
+
+  createOCRTokens(tokens: string[]) {
+    return this.request<{ created: number; duplicates: number }>('/api/tokens/ocr', {
+      method: 'POST',
+      body: JSON.stringify({ tokens }),
+    });
+  }
+
+  deleteOCRToken(id: number) {
+    return this.request<{ message: string }>(`/api/tokens/ocr/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleOCRToken(id: number) {
+    return this.request<TokenItem>(`/api/tokens/ocr/${id}/toggle`, {
+      method: 'PUT',
+    });
+  }
+
+  batchDeleteOCRTokens(ids: number[]) {
+    return this.request<{ deleted: number }>('/api/tokens/ocr/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  batchToggleOCRTokens(ids: number[], enable: boolean) {
+    return this.request<{ updated: number }>('/api/tokens/ocr/batch-toggle', {
+      method: 'POST',
+      body: JSON.stringify({ ids, enable }),
+    });
+  }
+
+  // Chat Tokens
+  getChatTokens() {
+    return this.request<TokenItem[]>('/api/tokens/chat');
+  }
+
+  createChatTokens(tokens: string[]) {
+    return this.request<{ created: number; duplicates: number }>('/api/tokens/chat', {
+      method: 'POST',
+      body: JSON.stringify({ tokens }),
+    });
+  }
+
+  deleteChatToken(id: number) {
+    return this.request<{ message: string }>(`/api/tokens/chat/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleChatToken(id: number) {
+    return this.request<TokenItem>(`/api/tokens/chat/${id}/toggle`, {
+      method: 'PUT',
+    });
+  }
+
+  batchDeleteChatTokens(ids: number[]) {
+    return this.request<{ deleted: number }>('/api/tokens/chat/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  batchToggleChatTokens(ids: number[], enable: boolean) {
+    return this.request<{ updated: number }>('/api/tokens/chat/batch-toggle', {
+      method: 'POST',
+      body: JSON.stringify({ ids, enable }),
+    });
+  }
+}
+
+export interface TokenItem {
+  id: number;
+  token: string;
+  imported_at: string;
+  last_used_at: string | null;
+  enabled: boolean;
+  total_call_count: number;
+  daily_call_count: number;
+}
+
+export const api = new ApiClient();

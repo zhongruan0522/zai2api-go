@@ -1,15 +1,22 @@
-version: "3.8"
-
 services:
-  zai2api:
-    build: .
-    image: zai2api-go:latest
-    container_name: zai2api
+  app:
+    image: ghcr.io/${GITHUB_USER:-your-username}/zai2api-go:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
-      - TZ=Asia/Shanghai
+      - GIN_MODE=release
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=zai2api
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
