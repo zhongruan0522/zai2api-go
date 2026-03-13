@@ -25,7 +25,7 @@ import {
 import { Toaster, toast } from 'sonner';
 import { api, TokenItem } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { Plus, Trash2, Power, PowerOff, LogOut } from 'lucide-react';
+import { Plus, Trash2, Power, PowerOff, LogOut, Key, FileText } from 'lucide-react';
 
 type TokenType = 'audio' | 'ocr' | 'chat';
 
@@ -270,6 +270,17 @@ export default function TokensPage() {
           </Button>
         </div>
 
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => router.push('/apikeys')}>
+            <Key className="mr-1.5 h-4 w-4" />
+            API Key
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => router.push('/logs')}>
+            <FileText className="mr-1.5 h-4 w-4" />
+            请求日志
+          </Button>
+        </div>
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TokenType)}>
           <TabsList>
@@ -334,6 +345,7 @@ export default function TokensPage() {
                       <TableHead>状态</TableHead>
                       <TableHead>总调用</TableHead>
                       <TableHead>今日调用</TableHead>
+                      {activeTab === 'ocr' && <TableHead>每日限额</TableHead>}
                       <TableHead>操作</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -365,6 +377,17 @@ export default function TokensPage() {
                         </TableCell>
                         <TableCell>{token.total_call_count}</TableCell>
                         <TableCell>{token.daily_call_count}</TableCell>
+                        {activeTab === 'ocr' && (
+                          <TableCell>
+                            <span className="text-sm">
+                              {token.daily_limit === 0 ? (
+                                <span className="text-neutral-400">无限制</span>
+                              ) : (
+                                `${token.daily_call_count}/${token.daily_limit}`
+                              )}
+                            </span>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button

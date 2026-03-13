@@ -177,6 +177,58 @@ class ApiClient {
       body: JSON.stringify({ ids, enable }),
     });
   }
+
+  // API Keys
+  getAPIKeys() {
+    return this.request<APIKeyItem[]>('/api/apikeys');
+  }
+
+  createAPIKey(services: string) {
+    return this.request<APIKeyItem>('/api/apikeys', {
+      method: 'POST',
+      body: JSON.stringify({ services }),
+    });
+  }
+
+  deleteAPIKey(id: number) {
+    return this.request<{ message: string }>(`/api/apikeys/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleAPIKey(id: number) {
+    return this.request<APIKeyItem>(`/api/apikeys/${id}/toggle`, {
+      method: 'PUT',
+    });
+  }
+
+  batchDeleteAPIKeys(ids: number[]) {
+    return this.request<{ deleted: number }>('/api/apikeys/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  batchToggleAPIKeys(ids: number[], enable: boolean) {
+    return this.request<{ updated: number }>('/api/apikeys/batch-toggle', {
+      method: 'POST',
+      body: JSON.stringify({ ids, enable }),
+    });
+  }
+
+  // Request Logs
+  getLogs(channel?: string, page?: number) {
+    const params = new URLSearchParams();
+    if (channel) params.set('channel', channel);
+    if (page) params.set('page', String(page));
+    return this.request<{ data: LogItem[]; total: number; page: number }>(
+      `/api/logs?${params.toString()}`
+    );
+  }
+
+  getLogStats() {
+    return this.request<LogStats>('/api/logs/stats');
+  }
 }
 
 export interface TokenItem {
@@ -187,6 +239,38 @@ export interface TokenItem {
   enabled: boolean;
   total_call_count: number;
   daily_call_count: number;
+  daily_limit?: number;
+}
+
+export interface APIKeyItem {
+  id: number;
+  key: string;
+  services: string;
+  enabled: boolean;
+  created_at: string;
+}
+
+export interface LogItem {
+  id: number;
+  request_id: string;
+  created_at: string;
+  channel: string;
+  source_ip: string;
+  api_key_id: number;
+  token_id: number;
+  success: boolean;
+  error_code: string;
+  error_msg: string;
+}
+
+export interface LogStats {
+  total: number;
+  success: number;
+  failed: number;
+  today: number;
+  ocr: number;
+  audio: number;
+  chat: number;
 }
 
 export const api = new ApiClient();

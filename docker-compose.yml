@@ -1,6 +1,6 @@
 services:
   app:
-    image: ghcr.io/${GITHUB_USER:-your-username}/zai2api-go:latest
+    image: ghcr.io/GongYiDaLao/zai2api-go:latest
     build:
       context: .
       dockerfile: Dockerfile
