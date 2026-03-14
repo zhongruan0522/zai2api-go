@@ -15,7 +15,7 @@ class ApiClient {
     }
   }
 
-  private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(path: string, options: RequestInit = {}, skipAuthRedirect = false): Promise<T> {
     const token = this.getToken();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -30,12 +30,11 @@ class ApiClient {
       headers,
     });
 
-    if (res.status === 401) {
+    if (res.status === 401 && !skipAuthRedirect) {
       this.setToken(null);
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }
-      throw new Error('Unauthorized');
     }
 
     if (!res.ok) {
@@ -51,7 +50,7 @@ class ApiClient {
     const res = await this.request<{ token: string }>('/api/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
-    });
+    }, true);
     this.setToken(res.token);
     return res;
   }

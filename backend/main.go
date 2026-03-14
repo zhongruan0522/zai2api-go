@@ -118,7 +118,7 @@ func main() {
 		// 前端路由：优先匹配预渲染的 HTML 文件，否则回退到 index.html (SPA)
 		indexFile := filepath.Join(frontendDir, "index.html")
 		r.NoRoute(func(c *gin.Context) {
-			if c.Request.Method != "GET" {
+			if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
 				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 				return
 			}
