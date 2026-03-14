@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"zai2api-go/auth"
 	"zai2api-go/config"
 	"zai2api-go/database"
@@ -30,10 +31,10 @@ func main() {
 
 	// CORS 配置
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 	}))
 
 	// 健康检查
@@ -102,6 +103,27 @@ func main() {
 			protected.GET("/logs", handlers.GetRequestLogs)
 			protected.GET("/logs/stats", handlers.GetRequestLogStats)
 		}
+	}
+
+	// 前端静态文件服务
+	frontendDir := filepath.Join(".", "frontend")
+	if _, err := os.Stat(frontendDir); err == nil {
+		// 静态资源（js/css/images 等）
+		r.Static("/_next", filepath.Join(frontendDir, "_next"))
+		if publicDir := filepath.Join(frontendDir, "public"); _, err := os.Stat(publicDir); err == nil {
+			r.Static("/public", publicDir)
+		}
+
+		// SPA 回退：所有未匹配的路由返回 index.html
+		indexFile := filepath.Join(frontendDir, "index.html")
+		r.NoRoute(func(c *gin.Context) {
+			// 非 GET 请求或路径看起来像 API 调用，返回 404
+			if c.Request.Method != "GET" {
+				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+				return
+			}
+			c.File(indexFile)
+		})
 	}
 
 	port := os.Getenv("PORT")
