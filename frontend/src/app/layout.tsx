@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Token 管理",
-  description: "Token 管理系统",
+  title: "ZAI2API 管理",
+  description: "Token 与 API Key 管理系统",
 };
 
 export default function RootLayout({
@@ -17,8 +17,8 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="antialiased">
         <AuthProvider>
-          <Toaster />
           {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
