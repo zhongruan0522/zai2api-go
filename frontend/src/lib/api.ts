@@ -216,11 +216,12 @@ class ApiClient {
   }
 
   // Request Logs
-  getLogs(channel?: string, page?: number) {
+  getLogs(channel?: string, page?: number, pageSize?: number) {
     const params = new URLSearchParams();
     if (channel) params.set('channel', channel);
     if (page) params.set('page', String(page));
-    return this.request<{ data: LogItem[]; total: number; page: number }>(
+    if (pageSize) params.set('page_size', String(pageSize));
+    return this.request<{ data: LogItem[]; total: number; page: number; page_size: number }>(
       `/api/logs?${params.toString()}`
     );
   }

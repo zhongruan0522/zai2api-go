@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"zai2api-go/database"
@@ -117,16 +118,19 @@ func BatchToggleAPIKeys(c *gin.Context) {
 func GetRequestLogs(c *gin.Context) {
 	var logs []models.RequestLog
 
-	// 支持分页
 	page := 1
 	pageSize := 50
 	if p := c.Query("page"); p != "" {
-		if _, err := hex.DecodeString(p); err == nil {
-			// 忽略错误，使用默认值
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if ps := c.Query("page_size"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = v
 		}
 	}
 
-	// 支持按渠道筛选
 	channel := c.Query("channel")
 
 	query := database.DB.Model(&models.RequestLog{})
@@ -134,30 +138,29 @@ func GetRequestLogs(c *gin.Context) {
 		query = query.Where("channel = ?", channel)
 	}
 
-	// 按时间倒序
+	var total int64
+	query.Count(&total)
+
 	query.Order("id desc").Offset((page - 1) * pageSize).Limit(pageSize).Find(&logs)
 
-	// 获取总数
-	var total int64
-	database.DB.Model(&models.RequestLog{}).Count(&total)
-
 	c.JSON(http.StatusOK, gin.H{
-		"data":  logs,
-		"total": total,
-		"page":  page,
+		"data":      logs,
+		"total":     total,
+		"page":      page,
+		"page_size": pageSize,
 	})
 }
 
 // GetRequestLogStats 获取请求统计
 func GetRequestLogStats(c *gin.Context) {
 	type Stats struct {
-		Total     int64 `json:"total"`
-		Success   int64 `json:"success"`
-		Failed    int64 `json:"failed"`
-		Today     int64 `json:"today"`
-		OCR       int64 `json:"ocr"`
-		Audio     int64 `json:"audio"`
-		Chat      int64 `json:"chat"`
+		Total   int64 `json:"total"`
+		Success int64 `json:"success"`
+		Failed  int64 `json:"failed"`
+		Today   int64 `json:"today"`
+		OCR     int64 `json:"ocr"`
+		Audio   int64 `json:"audio"`
+		Chat    int64 `json:"chat"`
 	}
 
 	var stats Stats

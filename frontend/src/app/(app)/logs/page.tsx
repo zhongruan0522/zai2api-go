@@ -3,41 +3,80 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { api, LogItem, LogStats } from '@/lib/api';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<LogItem[]>([]);
   const [stats, setStats] = useState<LogStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [channel, setChannel] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [total, setTotal] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [logsRes, statsRes] = await Promise.all([
-        api.getLogs(channel || undefined),
+        api.getLogs(channel || undefined, page, pageSize),
         api.getLogStats(),
       ]);
       setLogs(logsRes.data);
+      setTotal(logsRes.total);
       setStats(statsRes);
+      if (page > totalPages && totalPages > 0) {
+        setPage(totalPages);
+      }
     } catch {
       toast.error('获取数据失败');
     } finally {
       setLoading(false);
     }
-  }, [channel]);
+  }, [channel, page, pageSize, totalPages]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  const handleChannelChange = (ch: string) => {
+    setChannel(ch);
+    setPage(1);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setPage(1);
+  };
+
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('zh-CN');
   };
 
+  const goPage = (p: number) => {
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+  };
+
+  const getPageNumbers = () => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, page - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   return (
     <div className="space-y-5">
-      {/* Stats cards */}
       {stats && (
         <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           <StatCard label="总请求" value={stats.total} iconBg="bg-sky-100" />
@@ -50,7 +89,6 @@ export default function LogsPage() {
         </section>
       )}
 
-      {/* Logs table */}
       <section className="rounded-3xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-base font-semibold text-foreground">请求日志</p>
@@ -63,7 +101,7 @@ export default function LogsPage() {
                     ? 'bg-accent text-foreground border-primary/50 font-semibold'
                     : 'bg-transparent text-muted-foreground hover:bg-accent/50 hover:text-foreground border-border'
                 }`}
-                onClick={() => setChannel(ch)}
+                onClick={() => handleChannelChange(ch)}
               >
                 {ch || '全部'}
               </button>
@@ -128,6 +166,73 @@ export default function LogsPage() {
             <div className="py-8 text-center text-sm text-muted-foreground">暂无日志</div>
           )}
         </div>
+
+        {!loading && total > 0 && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">每页</span>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <button
+                  key={size}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                    pageSize === size
+                      ? 'bg-accent text-foreground border-primary/50'
+                      : 'bg-transparent text-muted-foreground hover:text-foreground border-border'
+                  }`}
+                  onClick={() => handlePageSizeChange(size)}
+                >
+                  {size}
+                </button>
+              ))}
+              <span className="text-xs text-muted-foreground">
+                共 {total} 条，第 {page}/{totalPages} 页
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page <= 1}
+                onClick={() => goPage(1)}
+              >
+                首页
+              </button>
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page <= 1}
+                onClick={() => goPage(page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {getPageNumbers().map((p) => (
+                <button
+                  key={p}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-medium transition-all ${
+                    p === page
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                  }`}
+                  onClick={() => goPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page >= totalPages}
+                onClick={() => goPage(page + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={page >= totalPages}
+                onClick={() => goPage(totalPages)}
+              >
+                末页
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
