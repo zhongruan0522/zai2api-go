@@ -32,6 +32,16 @@ func Setup(cfg *config.Config) *gin.Engine {
 		ocr.POST("/files/ocr", ocrHandler.ProcessOCR)
 	}
 
+	imageHandler := handlers.NewImageHandler()
+	image := r.Group("/image/v1")
+	{
+		image.POST("/images/generations", imageHandler.GenerateImage)
+	}
+	imageChat := r.Group("/v1")
+	{
+		imageChat.POST("/chat/completions", imageHandler.ChatGenerateImage)
+	}
+
 	api := r.Group("/api")
 	{
 		api.GET("/hello", func(c *gin.Context) {
