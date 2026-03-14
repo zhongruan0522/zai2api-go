@@ -61,6 +61,19 @@ export default function TokensPage() {
     else setSelectedIds(new Set(tokens.map((t) => t.id)));
   };
 
+  const BATCH_SIZE = 500;
+
+  const createTokensBatch = async (channel: TokenType, tokensList: string[]) => {
+    switch (channel) {
+      case 'audio':
+        return api.createAudioTokens(tokensList);
+      case 'ocr':
+        return api.createOCRTokens(tokensList);
+      case 'chat':
+        return api.createChatTokens(tokensList);
+    }
+  };
+
   const handleImport = async () => {
     const tokensList = newTokens.split('\n').map((t) => t.trim()).filter((t) => t);
     if (tokensList.length === 0) {
@@ -68,22 +81,28 @@ export default function TokensPage() {
       return;
     }
     setSubmitting(true);
+
     try {
-      let result;
-      switch (activeTab) {
-        case 'audio':
-          result = await api.createAudioTokens(tokensList);
-          break;
-        case 'ocr':
-          result = await api.createOCRTokens(tokensList);
-          break;
-        case 'chat':
-          result = await api.createChatTokens(tokensList);
-          break;
+      const totalCreated = { value: 0 };
+      const totalDuplicates = { value: 0 };
+      const batches: string[][] = [];
+
+      for (let i = 0; i < tokensList.length; i += BATCH_SIZE) {
+        batches.push(tokensList.slice(i, i + BATCH_SIZE));
       }
-      toast.success(`成功导入 ${result!.created} 个 Token`);
-      if (result!.duplicates > 0) {
-        toast.warning(`${result!.duplicates} 个重复 Token 已跳过`);
+
+      for (let i = 0; i < batches.length; i++) {
+        const result = await createTokensBatch(activeTab, batches[i]);
+        totalCreated.value += result!.created;
+        totalDuplicates.value += result!.duplicates;
+        if (batches.length > 1) {
+          toast.info(`批次 ${i + 1}/${batches.length} 导入完成`);
+        }
+      }
+
+      toast.success(`成功导入 ${totalCreated.value} 个 Token`);
+      if (totalDuplicates.value > 0) {
+        toast.warning(`${totalDuplicates.value} 个重复 Token 已跳过`);
       }
       setDialogOpen(false);
       setNewTokens('');
@@ -354,6 +373,11 @@ export default function TokensPage() {
                 rows={8}
                 className="min-h-0 rounded-2xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              <p className="mt-2 text-xs text-muted-foreground">
+                {newTokens.split('\n').filter((t) => t.trim()).length > 0 && (
+                  <>已输入 {newTokens.split('\n').filter((t) => t.trim()).length} 个 Token，超过 500 将自动分批导入</>
+                )}
+              </p>
             </div>
             <div className="mt-4 flex items-center justify-end gap-2">
               <button

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -9,6 +10,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+const maxBatchSize = 500
+
+func validateBatchSize(tokens []string, c *gin.Context) bool {
+	if len(tokens) > maxBatchSize {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("单次最多导入 %d 个 Token，当前 %d 个，请分批导入", maxBatchSize, len(tokens))})
+		return false
+	}
+	return true
+}
 
 // TokenResponse 通用响应结构
 type TokenResponse struct {
@@ -59,6 +70,9 @@ func CreateAudioTokens(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !validateBatchSize(req.Tokens, c) {
+		return
+	}
 
 	now := time.Now()
 	var created []models.AudioToken
@@ -101,6 +115,9 @@ func CreateOCRTokens(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !validateBatchSize(req.Tokens, c) {
+		return
+	}
 
 	now := time.Now()
 	var created []models.OCRToken
@@ -141,6 +158,9 @@ func CreateChatTokens(c *gin.Context) {
 	var req TokenCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !validateBatchSize(req.Tokens, c) {
 		return
 	}
 
