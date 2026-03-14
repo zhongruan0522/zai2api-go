@@ -102,9 +102,9 @@ func CreateAudioTokens(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"created":   len(created),
+		"created":    len(created),
 		"duplicates": len(duplicates),
-		"data":      created,
+		"data":       created,
 	})
 }
 
@@ -200,7 +200,10 @@ func CreateChatTokens(c *gin.Context) {
 
 // DeleteAudioToken 删除单个 Audio Token
 func DeleteAudioToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	if err := database.DB.Delete(&models.AudioToken{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -210,7 +213,10 @@ func DeleteAudioToken(c *gin.Context) {
 
 // DeleteOCRToken 删除单个 OCR Token
 func DeleteOCRToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	if err := database.DB.Delete(&models.OCRToken{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -220,7 +226,10 @@ func DeleteOCRToken(c *gin.Context) {
 
 // DeleteChatToken 删除单个 Chat Token
 func DeleteChatToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	if err := database.DB.Delete(&models.ChatToken{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -263,7 +272,10 @@ func BatchDeleteChatTokens(c *gin.Context) {
 
 // ToggleAudioToken 切换 Audio Token 启用状态
 func ToggleAudioToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	var token models.AudioToken
 	if err := database.DB.First(&token, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -276,7 +288,10 @@ func ToggleAudioToken(c *gin.Context) {
 
 // ToggleOCRToken 切换 OCR Token 启用状态
 func ToggleOCRToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	var token models.OCRToken
 	if err := database.DB.First(&token, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -289,7 +304,10 @@ func ToggleOCRToken(c *gin.Context) {
 
 // ToggleChatToken 切换 Chat Token 启用状态
 func ToggleChatToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	var token models.ChatToken
 	if err := database.DB.First(&token, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -396,7 +414,10 @@ func CreateImageTokens(c *gin.Context) {
 
 // DeleteImageToken 删除单个 Image Token
 func DeleteImageToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	if err := database.DB.Delete(&models.ImageToken{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -417,7 +438,10 @@ func BatchDeleteImageTokens(c *gin.Context) {
 
 // ToggleImageToken 切换 Image Token 启用状态
 func ToggleImageToken(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	var token models.ImageToken
 	if err := database.DB.First(&token, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})

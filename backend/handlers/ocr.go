@@ -19,12 +19,14 @@ import (
 type OCRHandler struct {
 	tokenSelector *services.TokenSelector
 	dailyLimit    int
+	maxRespBytes  int64
 }
 
 func NewOCRHandler(cfg *config.Config) *OCRHandler {
 	return &OCRHandler{
 		tokenSelector: services.NewTokenSelector(),
 		dailyLimit:    cfg.OCRDailyLimit,
+		maxRespBytes:  cfg.UpstreamMaxRespBytes,
 	}
 }
 
@@ -46,15 +48,21 @@ func (h *OCRHandler) ProcessOCR(c *gin.Context) {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("file")
+	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "400", "file required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file required"})
 		return
 	}
+	file, err := fileHeader.Open()
+	if err != nil {
+		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "400", "open file failed")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "open file failed"})
+		return
+	}
 	defer file.Close()
 
-	respBody, err := ocr.SendRequest(file, header.Filename, token.Token)
+	respBody, err := ocr.SendRequest(file, fileHeader.Filename, token.Token, h.maxRespBytes)
 	if err != nil {
 		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "502", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})

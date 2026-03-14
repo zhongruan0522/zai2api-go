@@ -1,9 +1,13 @@
 package router
 
 import (
+	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
+	"time"
 	"zai2api-go/auth"
 	"zai2api-go/config"
 	"zai2api-go/handlers"
@@ -15,12 +19,29 @@ import (
 func Setup(cfg *config.Config) *gin.Engine {
 	r := gin.Default()
 
-	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: false,
-	}))
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		log.Fatalf("invalid TRUSTED_PROXIES: %v", err)
+	}
+
+	if len(cfg.CORSAllowOrigins) > 0 {
+		corsCfg := cors.Config{
+			AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+			AllowCredentials: false,
+			MaxAge:           12 * time.Hour,
+		}
+		for _, o := range cfg.CORSAllowOrigins {
+			if o == "*" {
+				corsCfg.AllowAllOrigins = true
+				corsCfg.AllowOrigins = nil
+				break
+			}
+		}
+		if !corsCfg.AllowAllOrigins {
+			corsCfg.AllowOrigins = cfg.CORSAllowOrigins
+		}
+		r.Use(cors.New(corsCfg))
+	}
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -29,21 +50,25 @@ func Setup(cfg *config.Config) *gin.Engine {
 	ocrHandler := handlers.NewOCRHandler(cfg)
 	ocr := r.Group("/ocr/v1")
 	{
+		ocr.Use(limitBodySize(cfg.OCRMaxBodyBytes))
 		ocr.POST("/files/ocr", ocrHandler.ProcessOCR)
 	}
 
 	imageHandler := handlers.NewImageHandler()
 	image := r.Group("/image/v1")
 	{
+		image.Use(limitBodySize(cfg.ImageMaxBodyBytes))
 		image.POST("/images/generations", imageHandler.GenerateImage)
 	}
 	imageChat := r.Group("/v1")
 	{
+		imageChat.Use(limitBodySize(cfg.ImageMaxBodyBytes))
 		imageChat.POST("/chat/completions", imageHandler.ChatGenerateImage)
 	}
 
 	api := r.Group("/api")
 	{
+		api.Use(limitBodySize(cfg.AdminMaxBodyBytes))
 		api.GET("/hello", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"message": "Hello from Go backend!"})
 		})
@@ -126,16 +151,37 @@ func serveFrontend(r *gin.Engine) {
 	}
 
 	indexFile := filepath.Join(frontendDir, "index.html")
+	if _, err := os.Stat(indexFile); err != nil {
+		return
+	}
 	r.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 			return
 		}
-		path := c.Request.URL.Path
-		htmlFile := filepath.Join(frontendDir, path+".html")
-		if info, err := os.Stat(htmlFile); err == nil && !info.IsDir() {
-			c.File(htmlFile)
+
+		reqPath := c.Request.URL.Path
+		rel := strings.TrimPrefix(path.Clean(reqPath), "/")
+		if rel == "" || rel == "." {
+			c.File(indexFile)
 			return
+		}
+		// Basic hardening against path tricks on Windows-style paths.
+		if strings.Contains(rel, "\\") || strings.Contains(rel, ":") {
+			c.File(indexFile)
+			return
+		}
+
+		candidates := []string{
+			filepath.Join(frontendDir, rel),
+			filepath.Join(frontendDir, rel, "index.html"),
+			filepath.Join(frontendDir, rel+".html"),
+		}
+		for _, f := range candidates {
+			if info, err := os.Stat(f); err == nil && !info.IsDir() {
+				c.File(f)
+				return
+			}
 		}
 		c.File(indexFile)
 	})

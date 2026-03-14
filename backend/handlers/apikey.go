@@ -68,7 +68,10 @@ func CreateAPIKey(c *gin.Context) {
 
 // DeleteAPIKey 删除 API Key
 func DeleteAPIKey(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	if err := database.DB.Delete(&models.APIKey{}, id).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -78,7 +81,10 @@ func DeleteAPIKey(c *gin.Context) {
 
 // ToggleAPIKey 切换 API Key 启用状态
 func ToggleAPIKey(c *gin.Context) {
-	id := c.Param("id")
+	id, ok := parseUintParam(c, "id")
+	if !ok {
+		return
+	}
 	var key models.APIKey
 	if err := database.DB.First(&key, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
