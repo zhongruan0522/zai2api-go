@@ -133,6 +133,8 @@ func hasService(servicesStr, service string) bool {
 }
 
 func (h *OCRHandler) logRequest(requestID, channel, sourceIP string, apiKeyID, tokenID uint, success bool, errorCode, errorMsg string) {
+	errorCode = truncateString(errorCode, 20)
+	errorMsg = truncateString(errorMsg, 500)
 	log := models.RequestLog{
 		RequestID: requestID,
 		CreatedAt: time.Now(),

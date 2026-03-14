@@ -126,6 +126,7 @@ func GetRequestLogs(c *gin.Context) {
 
 	page := 1
 	pageSize := 50
+	const maxPageSize = 200
 	if p := c.Query("page"); p != "" {
 		if v, err := strconv.Atoi(p); err == nil && v > 0 {
 			page = v
@@ -135,6 +136,9 @@ func GetRequestLogs(c *gin.Context) {
 		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
 			pageSize = v
 		}
+	}
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
 	}
 
 	channel := c.Query("channel")

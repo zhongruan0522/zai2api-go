@@ -40,6 +40,7 @@ func Init(cfg *config.Config) {
 	}
 
 	migrateTokenColumnSize()
+	migrateCounterColumnTypes()
 
 	syncAdminUser(cfg)
 	log.Println("Database initialized successfully")
@@ -83,6 +84,32 @@ func migrateTokenColumnSize() {
 		}
 		if ct != columnType {
 			DB.Exec(fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s", m.table, m.column, columnType))
+		}
+	}
+}
+
+func migrateCounterColumnTypes() {
+	desired := "bigint"
+	for _, m := range []struct{ table, column string }{
+		{"audio_token", "total_call_count"},
+		{"audio_token", "daily_call_count"},
+		{"ocr_token", "total_call_count"},
+		{"ocr_token", "daily_call_count"},
+		{"ocr_token", "daily_limit"},
+		{"chat_token", "total_call_count"},
+		{"chat_token", "daily_call_count"},
+		{"image_token", "total_call_count"},
+		{"image_token", "daily_call_count"},
+	} {
+		var dt string
+		if err := DB.Raw(
+			"SELECT data_type FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+			m.table, m.column,
+		).Scan(&dt).Error; err != nil {
+			continue
+		}
+		if dt != desired {
+			DB.Exec(fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s", m.table, m.column, desired))
 		}
 	}
 }
