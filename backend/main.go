@@ -110,14 +110,14 @@ func main() {
 	if _, err := os.Stat(frontendDir); err == nil {
 		// 静态资源（js/css/images 等）
 		r.Static("/_next", filepath.Join(frontendDir, "_next"))
-		if publicDir := filepath.Join(frontendDir, "public"); _, err := os.Stat(publicDir); err == nil {
+		publicDir := filepath.Join(frontendDir, "public")
+		if _, err := os.Stat(publicDir); err == nil {
 			r.Static("/public", publicDir)
 		}
 
 		// SPA 回退：所有未匹配的路由返回 index.html
 		indexFile := filepath.Join(frontendDir, "index.html")
 		r.NoRoute(func(c *gin.Context) {
-			// 非 GET 请求或路径看起来像 API 调用，返回 404
 			if c.Request.Method != "GET" {
 				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 				return
