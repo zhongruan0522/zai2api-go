@@ -1,22 +1,69 @@
+# Quick start:
+# 1) cp .env.example .env
+# 2) Edit .env (ADMIN_PASSWORD / JWT_SECRET must be strong)
+# 3) docker compose up -d
+# 4) Open http://localhost:8080
+#
+# Notes:
+# - This compose includes a Postgres service for single-host deployment.
+# - If you put the app behind a reverse proxy, set TRUSTED_PROXIES and (if needed) CORS_ALLOW_ORIGINS.
+
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-zai2api}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      TZ: ${DB_TIMEZONE:-Asia/Shanghai}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   app:
     image: ghcr.io/GongYiDaLao/zai2api-go:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # If you prefer local build, uncomment below:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     environment:
-      - PORT=8080
-      - GIN_MODE=release
-      - ADMIN_USERNAME=${ADMIN_USERNAME:?set ADMIN_USERNAME}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
-      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=zai2api
+      PORT: 8080
+      # Production mode will reject weak defaults unless ALLOW_INSECURE_DEFAULTS=true
+      GIN_MODE: ${GIN_MODE:-release}
+      APP_ENV: ${APP_ENV:-production}
+
+      # Required (put them in .env)
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?set ADMIN_USERNAME in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+
+      # Database (defaults are fine for local use; change in production)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-zai2api}
+      DB_TIMEZONE: ${DB_TIMEZONE:-Asia/Shanghai}
+
+      # Optional security / ops knobs
+      # CORS_ALLOW_ORIGINS: "https://admin.example.com"
+      # TRUSTED_PROXIES: "127.0.0.1,10.0.0.0/8"
+      # ADMIN_MAX_BODY_BYTES: 2097152
+      # IMAGE_MAX_BODY_BYTES: 1048576
+      # OCR_MAX_BODY_BYTES: 26214400
+      # UPSTREAM_MAX_RESPONSE_BYTES: 10485760
+      # ALLOW_INSECURE_DEFAULTS: "false"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
@@ -24,3 +71,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+volumes:
+  postgres_data:

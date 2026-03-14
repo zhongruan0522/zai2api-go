@@ -30,7 +30,7 @@ zai2api-go/
 ## 技术栈
 
 - **后端**: Go + Gin + CORS
-- **前端**: Next.js 15 + TypeScript + Tailwind CSS v4 + shadcn/ui
+- **前端**: Next.js (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui
 
 ## 开发命令
 
@@ -45,8 +45,16 @@ cd frontend && npm run dev
 ## 部署
 
 - 支持 Docker 多架构部署 (AMD64/ARM64)
-- 使用 `docker-compose up -d` 本地部署
+- 推荐使用 `docker compose` 本地/单机部署（包含 Postgres）
+- 首次部署：`cp .env.example .env` 后修改 `ADMIN_PASSWORD` / `JWT_SECRET` 再执行 `docker compose up -d`
 - GitHub Actions 自动构建推送到 ghcr.io
+
+## 环境变量与安全提示
+
+- 生产环境必须设置强密码/强密钥：`ADMIN_PASSWORD`（>= 12 chars）、`JWT_SECRET`（>= 32 chars 随机字符串）
+- 如部署在反向代理后，请设置 `TRUSTED_PROXIES`（否则 `ClientIP()` 可能不准确或可被伪造）
+- 若需要从其他域访问后端（前后端分离），请设置 `CORS_ALLOW_ORIGINS`
+- 详细审计与加固说明见：`SECURITY_AUDIT.md`
 
 ## 关于BUG反馈
 
