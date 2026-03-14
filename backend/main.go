@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 	"zai2api-go/auth"
 	"zai2api-go/config"
 	"zai2api-go/database"
 	"zai2api-go/handlers"
+	"zai2api-go/services"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -132,6 +134,20 @@ func main() {
 			c.File(indexFile)
 		})
 	}
+
+	// 每日调用计数重置定时任务（每天 00:00 执行）
+	go func() {
+		for {
+			now := time.Now()
+			next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+			time.Sleep(next.Sub(now))
+			if err := services.ResetDailyCallCount(); err != nil {
+				log.Printf("Reset daily call count failed: %v", err)
+			} else {
+				log.Println("Daily call count reset successfully")
+			}
+		}
+	}()
 
 	port := os.Getenv("PORT")
 	if port == "" {
