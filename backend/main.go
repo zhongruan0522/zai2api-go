@@ -2,152 +2,22 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
-	"path/filepath"
-	"time"
 	"zai2api-go/auth"
+	"zai2api-go/common"
 	"zai2api-go/config"
 	"zai2api-go/database"
-	"zai2api-go/handlers"
-	"zai2api-go/services"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"zai2api-go/router"
 )
 
 func main() {
-	// 加载配置
 	cfg := config.Load()
 
-	// 初始化数据库
 	database.Init(cfg)
-
-	// 初始化认证模块
 	auth.Init(cfg)
+	common.StartDailyResetScheduler()
 
-	// 初始化 OCR 处理器
-	ocrHandler := handlers.NewOCRHandler(cfg)
-
-	r := gin.Default()
-
-	// CORS 配置
-	r.Use(cors.New(cors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: false,
-	}))
-
-	// 健康检查
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
-
-	// OCR 对外接口（需要 API Key 认证）
-	ocr := r.Group("/ocr/v1")
-	{
-		ocr.POST("/files/ocr", ocrHandler.ProcessOCR)
-	}
-
-	// API 路由组
-	api := r.Group("/api")
-	{
-		api.GET("/hello", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{"message": "Hello from Go backend!"})
-		})
-
-		// 登录接口（无需认证）
-		api.POST("/login", auth.LoginHandler)
-
-		// 需要认证的路由
-		protected := api.Group("")
-		protected.Use(auth.AuthMiddleware())
-		{
-			protected.GET("/me", func(c *gin.Context) {
-				username := c.GetString("username")
-				c.JSON(http.StatusOK, gin.H{"username": username})
-			})
-
-			// Audio Token 管理
-			protected.GET("/tokens/audio", handlers.GetAudioTokens)
-			protected.POST("/tokens/audio", handlers.CreateAudioTokens)
-			protected.DELETE("/tokens/audio/:id", handlers.DeleteAudioToken)
-			protected.PUT("/tokens/audio/:id/toggle", handlers.ToggleAudioToken)
-			protected.POST("/tokens/audio/batch-delete", handlers.BatchDeleteAudioTokens)
-			protected.POST("/tokens/audio/batch-toggle", handlers.BatchToggleAudioTokens)
-
-			// OCR Token 管理
-			protected.GET("/tokens/ocr", handlers.GetOCRTokens)
-			protected.POST("/tokens/ocr", handlers.CreateOCRTokens)
-			protected.DELETE("/tokens/ocr/:id", handlers.DeleteOCRToken)
-			protected.PUT("/tokens/ocr/:id/toggle", handlers.ToggleOCRToken)
-			protected.POST("/tokens/ocr/batch-delete", handlers.BatchDeleteOCRTokens)
-			protected.POST("/tokens/ocr/batch-toggle", handlers.BatchToggleOCRTokens)
-
-			// Chat Token 管理
-			protected.GET("/tokens/chat", handlers.GetChatTokens)
-			protected.POST("/tokens/chat", handlers.CreateChatTokens)
-			protected.DELETE("/tokens/chat/:id", handlers.DeleteChatToken)
-			protected.PUT("/tokens/chat/:id/toggle", handlers.ToggleChatToken)
-			protected.POST("/tokens/chat/batch-delete", handlers.BatchDeleteChatTokens)
-			protected.POST("/tokens/chat/batch-toggle", handlers.BatchToggleChatTokens)
-
-			// API Key 管理
-			protected.GET("/apikeys", handlers.GetAPIKeys)
-			protected.POST("/apikeys", handlers.CreateAPIKey)
-			protected.DELETE("/apikeys/:id", handlers.DeleteAPIKey)
-			protected.PUT("/apikeys/:id/toggle", handlers.ToggleAPIKey)
-			protected.POST("/apikeys/batch-delete", handlers.BatchDeleteAPIKeys)
-			protected.POST("/apikeys/batch-toggle", handlers.BatchToggleAPIKeys)
-
-			// 请求日志
-			protected.GET("/logs", handlers.GetRequestLogs)
-			protected.GET("/logs/stats", handlers.GetRequestLogStats)
-		}
-	}
-
-	// 前端静态文件服务
-	frontendDir := filepath.Join(".", "frontend")
-	if _, err := os.Stat(frontendDir); err == nil {
-		// 静态资源（js/css/images 等）
-		r.Static("/_next", filepath.Join(frontendDir, "_next"))
-		publicDir := filepath.Join(frontendDir, "public")
-		if _, err := os.Stat(publicDir); err == nil {
-			r.Static("/public", publicDir)
-		}
-
-		// 前端路由：优先匹配预渲染的 HTML 文件，否则回退到 index.html (SPA)
-		indexFile := filepath.Join(frontendDir, "index.html")
-		r.NoRoute(func(c *gin.Context) {
-			if c.Request.Method != "GET" && c.Request.Method != "HEAD" {
-				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-				return
-			}
-			path := c.Request.URL.Path
-			// 尝试匹配路由对应的 HTML 文件（如 /login → login.html）
-			htmlFile := filepath.Join(frontendDir, path+".html")
-			if info, err := os.Stat(htmlFile); err == nil && !info.IsDir() {
-				c.File(htmlFile)
-				return
-			}
-			c.File(indexFile)
-		})
-	}
-
-	// 每日调用计数重置定时任务（每天 00:00 执行）
-	go func() {
-		for {
-			now := time.Now()
-			next := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
-			time.Sleep(next.Sub(now))
-			if err := services.ResetDailyCallCount(); err != nil {
-				log.Printf("Reset daily call count failed: %v", err)
-			} else {
-				log.Println("Daily call count reset successfully")
-			}
-		}
-	}()
+	r := router.Setup(cfg)
 
 	port := os.Getenv("PORT")
 	if port == "" {
