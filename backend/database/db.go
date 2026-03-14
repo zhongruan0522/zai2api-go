@@ -32,6 +32,7 @@ func Init(cfg *config.Config) {
 		&models.AudioToken{},
 		&models.OCRToken{},
 		&models.ChatToken{},
+		&models.ImageToken{},
 		&models.APIKey{},
 		&models.RequestLog{},
 	); err != nil {
@@ -71,6 +72,7 @@ func migrateTokenColumnSize() {
 		{"audio_token", "token"},
 		{"ocr_token", "token"},
 		{"chat_token", "token"},
+		{"image_token", "token"},
 	} {
 		var ct string
 		if err := DB.Raw(

@@ -86,6 +86,7 @@ export default function LogsPage() {
           <StatCard label="OCR" value={stats.ocr} iconBg="bg-violet-100" />
           <StatCard label="Audio" value={stats.audio} iconBg="bg-blue-100" />
           <StatCard label="Chat" value={stats.chat} iconBg="bg-teal-100" />
+          <StatCard label="Image" value={stats.image} iconBg="bg-pink-100" />
         </section>
       )}
 
@@ -93,7 +94,7 @@ export default function LogsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-base font-semibold text-foreground">请求日志</p>
           <div className="flex flex-wrap items-center gap-2">
-            {['', 'ocr', 'audio', 'chat'].map((ch) => (
+            {['', 'ocr', 'audio', 'chat', 'image'].map((ch) => (
               <button
                 key={ch}
                 className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${

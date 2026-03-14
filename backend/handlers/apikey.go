@@ -15,7 +15,7 @@ import (
 
 // APIKeyCreateRequest 创建 API Key 请求
 type APIKeyCreateRequest struct {
-	Services string `json:"services"` // 服务类型：ocr,audio,chat 或 * 表示全部
+	Services string `json:"services"` // 服务类型：ocr,audio,chat,image 或 * 表示全部
 }
 
 // APIKeyBatchRequest 批量操作请求
@@ -161,6 +161,7 @@ func GetRequestLogStats(c *gin.Context) {
 		OCR     int64 `json:"ocr"`
 		Audio   int64 `json:"audio"`
 		Chat    int64 `json:"chat"`
+		Image   int64 `json:"image"`
 	}
 
 	var stats Stats
@@ -182,6 +183,7 @@ func GetRequestLogStats(c *gin.Context) {
 	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "ocr").Count(&stats.OCR)
 	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "audio").Count(&stats.Audio)
 	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "chat").Count(&stats.Chat)
+	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "image").Count(&stats.Image)
 
 	c.JSON(http.StatusOK, stats)
 }

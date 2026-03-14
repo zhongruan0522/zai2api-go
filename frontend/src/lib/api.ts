@@ -177,6 +177,44 @@ class ApiClient {
     });
   }
 
+  // Image Tokens
+  getImageTokens() {
+    return this.request<TokenItem[]>('/api/tokens/image');
+  }
+
+  createImageTokens(tokens: string[]) {
+    return this.request<{ created: number; duplicates: number }>('/api/tokens/image', {
+      method: 'POST',
+      body: JSON.stringify({ tokens }),
+    });
+  }
+
+  deleteImageToken(id: number) {
+    return this.request<{ message: string }>(`/api/tokens/image/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleImageToken(id: number) {
+    return this.request<TokenItem>(`/api/tokens/image/${id}/toggle`, {
+      method: 'PUT',
+    });
+  }
+
+  batchDeleteImageTokens(ids: number[]) {
+    return this.request<{ deleted: number }>('/api/tokens/image/batch-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  }
+
+  batchToggleImageTokens(ids: number[], enable: boolean) {
+    return this.request<{ updated: number }>('/api/tokens/image/batch-toggle', {
+      method: 'POST',
+      body: JSON.stringify({ ids, enable }),
+    });
+  }
+
   // API Keys
   getAPIKeys() {
     return this.request<APIKeyItem[]>('/api/apikeys');
@@ -271,6 +309,7 @@ export interface LogStats {
   ocr: number;
   audio: number;
   chat: number;
+  image: number;
 }
 
 export const api = new ApiClient();

@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { api, TokenItem } from '@/lib/api';
 import { Plus, Trash2, Power, PowerOff } from 'lucide-react';
 
-type TokenType = 'audio' | 'ocr' | 'chat';
+type TokenType = 'audio' | 'ocr' | 'chat' | 'image';
 
 export default function TokensPage() {
   const [activeTab, setActiveTab] = useState<TokenType>('audio');
@@ -34,6 +34,9 @@ export default function TokensPage() {
           break;
         case 'chat':
           data = await api.getChatTokens();
+          break;
+        case 'image':
+          data = await api.getImageTokens();
           break;
       }
       setTokens(data);
@@ -71,6 +74,8 @@ export default function TokensPage() {
         return api.createOCRTokens(tokensList);
       case 'chat':
         return api.createChatTokens(tokensList);
+      case 'image':
+        return api.createImageTokens(tokensList);
     }
   };
 
@@ -128,6 +133,9 @@ export default function TokensPage() {
         case 'chat':
           await api.deleteChatToken(id);
           break;
+        case 'image':
+          await api.deleteImageToken(id);
+          break;
       }
       toast.success('删除成功');
       fetchTokens();
@@ -153,6 +161,9 @@ export default function TokensPage() {
         case 'chat':
           await api.batchDeleteChatTokens(ids);
           break;
+        case 'image':
+          await api.batchDeleteImageTokens(ids);
+          break;
       }
       toast.success(`成功删除 ${ids.length} 个 Token`);
       fetchTokens();
@@ -172,6 +183,9 @@ export default function TokensPage() {
           break;
         case 'chat':
           await api.toggleChatToken(id);
+          break;
+        case 'image':
+          await api.toggleImageToken(id);
           break;
       }
       toast.success(currentEnabled ? '已禁用' : '已启用');
@@ -198,6 +212,9 @@ export default function TokensPage() {
         case 'chat':
           await api.batchToggleChatTokens(ids, enable);
           break;
+        case 'image':
+          await api.batchToggleImageTokens(ids, enable);
+          break;
       }
       toast.success(`已${enable ? '启用' : '禁用'} ${ids.length} 个 Token`);
       fetchTokens();
@@ -223,6 +240,7 @@ export default function TokensPage() {
           <TabsTrigger value="audio">Audio Token</TabsTrigger>
           <TabsTrigger value="ocr">OCR Token</TabsTrigger>
           <TabsTrigger value="chat">Chat Token</TabsTrigger>
+          <TabsTrigger value="image">Image Token</TabsTrigger>
         </TabsList>
       </Tabs>
 

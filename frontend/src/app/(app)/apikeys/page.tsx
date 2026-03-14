@@ -261,12 +261,12 @@ export default function APIKeysPage() {
                 <label className="block text-xs text-muted-foreground">服务类型</label>
                 <input
                   type="text"
-                  placeholder="* 表示全部，或 ocr,audio,chat"
+                  placeholder="* 表示全部，或 ocr,audio,chat,image"
                   value={services}
                   onChange={(e) => setServices(e.target.value)}
                   className="w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-                <p className="text-[11px] text-muted-foreground">* = 全部服务 | 多个服务用逗号分隔</p>
+                <p className="text-[11px] text-muted-foreground">* = 全部服务 | 多个服务用逗号分隔 (ocr,audio,chat,image)</p>
               </div>
             </div>
             <div className="mt-6 flex items-center justify-end gap-2">

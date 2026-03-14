@@ -341,3 +341,103 @@ func BatchToggleChatTokens(c *gin.Context) {
 	database.DB.Model(&models.ChatToken{}).Where("id IN ?", req.IDs).Update("enabled", req.Enable)
 	c.JSON(http.StatusOK, gin.H{"updated": len(req.IDs)})
 }
+
+// GetImageTokens 获取所有 Image Token
+func GetImageTokens(c *gin.Context) {
+	var tokens []models.ImageToken
+	database.DB.Order("id desc").Find(&tokens)
+	c.JSON(http.StatusOK, tokens)
+}
+
+// CreateImageTokens 批量创建 Image Token
+func CreateImageTokens(c *gin.Context) {
+	var req TokenCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if !validateBatchSize(req.Tokens, c) {
+		return
+	}
+
+	now := time.Now()
+	var created []models.ImageToken
+	var duplicates []string
+
+	for _, tokenStr := range req.Tokens {
+		tokenStr = strings.TrimSpace(tokenStr)
+		if tokenStr == "" {
+			continue
+		}
+
+		var existing models.ImageToken
+		if err := database.DB.Where("token = ?", tokenStr).First(&existing).Error; err == nil {
+			duplicates = append(duplicates, tokenStr)
+			continue
+		}
+
+		token := models.ImageToken{
+			Token:      tokenStr,
+			ImportedAt: now,
+			Enabled:    true,
+		}
+		if err := database.DB.Create(&token).Error; err != nil {
+			continue
+		}
+		created = append(created, token)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"created":    len(created),
+		"duplicates": len(duplicates),
+		"data":       created,
+	})
+}
+
+// DeleteImageToken 删除单个 Image Token
+func DeleteImageToken(c *gin.Context) {
+	id := c.Param("id")
+	if err := database.DB.Delete(&models.ImageToken{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
+// BatchDeleteImageTokens 批量删除 Image Token
+func BatchDeleteImageTokens(c *gin.Context) {
+	var req TokenBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	database.DB.Delete(&models.ImageToken{}, req.IDs)
+	c.JSON(http.StatusOK, gin.H{"deleted": len(req.IDs)})
+}
+
+// ToggleImageToken 切换 Image Token 启用状态
+func ToggleImageToken(c *gin.Context) {
+	id := c.Param("id")
+	var token models.ImageToken
+	if err := database.DB.First(&token, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+	token.Enabled = !token.Enabled
+	database.DB.Save(&token)
+	c.JSON(http.StatusOK, token)
+}
+
+// BatchToggleImageTokens 批量切换 Image Token 启用状态
+func BatchToggleImageTokens(c *gin.Context) {
+	var req struct {
+		IDs    []uint `json:"ids" binding:"required"`
+		Enable bool   `json:"enable"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	database.DB.Model(&models.ImageToken{}).Where("id IN ?", req.IDs).Update("enabled", req.Enable)
+	c.JSON(http.StatusOK, gin.H{"updated": len(req.IDs)})
+}

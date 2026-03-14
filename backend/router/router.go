@@ -80,6 +80,13 @@ func registerTokenRoutes(rg *gin.RouterGroup) {
 	rg.PUT("/tokens/chat/:id/toggle", handlers.ToggleChatToken)
 	rg.POST("/tokens/chat/batch-delete", handlers.BatchDeleteChatTokens)
 	rg.POST("/tokens/chat/batch-toggle", handlers.BatchToggleChatTokens)
+
+	rg.GET("/tokens/image", handlers.GetImageTokens)
+	rg.POST("/tokens/image", handlers.CreateImageTokens)
+	rg.DELETE("/tokens/image/:id", handlers.DeleteImageToken)
+	rg.PUT("/tokens/image/:id/toggle", handlers.ToggleImageToken)
+	rg.POST("/tokens/image/batch-delete", handlers.BatchDeleteImageTokens)
+	rg.POST("/tokens/image/batch-toggle", handlers.BatchToggleImageTokens)
 }
 
 func registerAPIKeyRoutes(rg *gin.RouterGroup) {
