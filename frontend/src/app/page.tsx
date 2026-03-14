@@ -1,22 +1,23 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
 export default function Home() {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && pathname === '/') {
       if (isAuthenticated) {
-        router.push('/tokens');
+        router.replace('/tokens');
       } else {
-        router.push('/login');
+        router.replace('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, pathname]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

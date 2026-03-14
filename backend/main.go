@@ -115,11 +115,18 @@ func main() {
 			r.Static("/public", publicDir)
 		}
 
-		// SPA 回退：所有未匹配的路由返回 index.html
+		// 前端路由：优先匹配预渲染的 HTML 文件，否则回退到 index.html (SPA)
 		indexFile := filepath.Join(frontendDir, "index.html")
 		r.NoRoute(func(c *gin.Context) {
 			if c.Request.Method != "GET" {
 				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+				return
+			}
+			path := c.Request.URL.Path
+			// 尝试匹配路由对应的 HTML 文件（如 /login → login.html）
+			htmlFile := filepath.Join(frontendDir, path+".html")
+			if info, err := os.Stat(htmlFile); err == nil && !info.IsDir() {
+				c.File(htmlFile)
 				return
 			}
 			c.File(indexFile)
