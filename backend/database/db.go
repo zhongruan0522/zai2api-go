@@ -38,7 +38,8 @@ func Init(cfg *config.Config) {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
-	// 同步管理员账户
+	migrateTokenColumnSize()
+
 	syncAdminUser(cfg)
 	log.Println("Database initialized successfully")
 }
@@ -62,6 +63,26 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func migrateTokenColumnSize() {
+	columnType := "character varying(1024)"
+	for _, m := range []struct{ table, column string }{
+		{"audio_token", "token"},
+		{"ocr_token", "token"},
+		{"chat_token", "token"},
+	} {
+		var ct string
+		if err := DB.Raw(
+			"SELECT data_type || '(' || character_maximum_length || ')' FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+			m.table, m.column,
+		).Scan(&ct).Error; err != nil {
+			continue
+		}
+		if ct != columnType {
+			DB.Exec(fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s TYPE %s", m.table, m.column, columnType))
+		}
+	}
 }
 
 func syncAdminUser(cfg *config.Config) {

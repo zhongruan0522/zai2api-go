@@ -18,12 +18,41 @@ const (
 // AudioToken 音频服务 Token
 type AudioToken struct {
 	ID              uint           `json:"id" gorm:"primaryKey"`
-	Token           string         `json:"token" gorm:"uniqueIndex;size:255;not null"`
-	ImportedAt      time.Time      `json:"imported_at" gorm:"not null"`        // 导入日期（带时间）
-	LastUsedAt      *time.Time     `json:"last_used_at"`                       // 最后使用日期（仅日期）
-	Enabled         bool           `json:"enabled" gorm:"default:true"`        // 是否启用
-	TotalCallCount  int            `json:"total_call_count" gorm:"default:0"`  // 总共调用次数
-	DailyCallCount  int            `json:"daily_call_count" gorm:"default:0"`  // 当日调用次数
+	Token           string         `json:"token" gorm:"uniqueIndex;size:1024;not null"`
+	ImportedAt      time.Time      `json:"imported_at" gorm:"not null"`
+	LastUsedAt      *time.Time     `json:"last_used_at"`
+	Enabled         bool           `json:"enabled" gorm:"default:true"`
+	TotalCallCount  int            `json:"total_call_count" gorm:"default:0"`
+	DailyCallCount  int            `json:"daily_call_count" gorm:"default:0"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// OCRToken OCR 服务 Token
+type OCRToken struct {
+	ID              uint           `json:"id" gorm:"primaryKey"`
+	Token           string         `json:"token" gorm:"uniqueIndex;size:1024;not null"`
+	ImportedAt      time.Time      `json:"imported_at" gorm:"not null"`
+	LastUsedAt      *time.Time     `json:"last_used_at"`
+	Enabled         bool           `json:"enabled" gorm:"default:true"`
+	TotalCallCount  int            `json:"total_call_count" gorm:"default:0"`
+	DailyCallCount  int            `json:"daily_call_count" gorm:"default:0"`
+	DailyLimit      int            `json:"daily_limit" gorm:"default:0"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// ChatToken 聊天服务 Token
+type ChatToken struct {
+	ID              uint           `json:"id" gorm:"primaryKey"`
+	Token           string         `json:"token" gorm:"uniqueIndex;size:1024;not null"`
+	ImportedAt      time.Time      `json:"imported_at" gorm:"not null"`
+	LastUsedAt      *time.Time     `json:"last_used_at"`
+	Enabled         bool           `json:"enabled" gorm:"default:true"`
+	TotalCallCount  int            `json:"total_call_count" gorm:"default:0"`
+	DailyCallCount  int            `json:"daily_call_count" gorm:"default:0"`
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `json:"-" gorm:"index"`

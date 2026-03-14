@@ -48,6 +48,11 @@ cd frontend && npm run dev
 - 使用 `docker-compose up -d` 本地部署
 - GitHub Actions 自动构建推送到 ghcr.io
 
+## 关于BUG反馈
+
+1. 用户部署了一个基于最新的云端commit的项目实例，其位于http://45.205.31.20:10000/,账户admin，密码admintest，为测试专用平台
+2. 可以使用浏览器MCP进行复测
+
 ## 代码规范
 
 ### 通用
