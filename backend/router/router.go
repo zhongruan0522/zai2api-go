@@ -133,6 +133,10 @@ func registerLogRoutes(rg *gin.RouterGroup) {
 	rg.GET("/logs/chat/stats", handlers.GetChatLogStats)
 	rg.GET("/logs/image", handlers.GetImageLogs)
 	rg.GET("/logs/image/stats", handlers.GetImageLogStats)
+
+	rg.GET("/logs/monitor/summary", handlers.GetMonitorSummary)
+	rg.GET("/logs/monitor/daily", handlers.GetMonitorDaily)
+	rg.GET("/logs/monitor/hourly", handlers.GetMonitorHourly)
 }
 
 func serveFrontend(r *gin.Engine) {

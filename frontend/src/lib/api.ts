@@ -248,6 +248,15 @@ class ApiClient {
   getImageLogStats() {
     return this.request<ChannelStats>('/api/logs/image/stats');
   }
+
+  // Monitor
+  getMonitorSummary() {
+    return this.request<MonitorSummary>('/api/logs/monitor/summary');
+  }
+
+  getMonitorHourly() {
+    return this.request<ChannelTrends>('/api/logs/monitor/hourly');
+  }
 }
 
 export interface TokenItem {
@@ -286,6 +295,38 @@ export interface ChannelStats {
   success: number;
   failed: number;
   today: number;
+}
+
+export interface ChannelAvailability {
+  total: number;
+  success: number;
+  failed: number;
+  availability: number;
+}
+
+export interface MonitorChannels {
+  ocr: ChannelAvailability;
+  chat: ChannelAvailability;
+  image: ChannelAvailability;
+}
+
+export interface MonitorSummary {
+  recent_hour: MonitorChannels;
+  today: MonitorChannels;
+}
+
+export interface TrendPoint {
+  label: string;
+  total: number;
+  success: number;
+  failed: number;
+  availability: number;
+}
+
+export interface ChannelTrends {
+  ocr: TrendPoint[];
+  chat: TrendPoint[];
+  image: TrendPoint[];
 }
 
 export const api = new ApiClient();

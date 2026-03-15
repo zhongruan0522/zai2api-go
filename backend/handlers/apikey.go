@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 	"zai2api-go/database"
 	"zai2api-go/models"
 
@@ -187,13 +186,17 @@ func GetImageLogStats(c *gin.Context) {
 
 func channelStats(c *gin.Context, sample interface{}) {
 	var stats ChannelStats
+	todayStart := startOfDay(monitorNow())
+	tomorrowStart := todayStart.AddDate(0, 0, 1)
 
-	database.DB.Model(sample).Count(&stats.Total)
-	database.DB.Model(sample).Where("success = ?", true).Count(&stats.Success)
-	database.DB.Model(sample).Where("success = ?", false).Count(&stats.Failed)
-
-	today := time.Now().Format("2006-01-02")
-	database.DB.Model(sample).Where("DATE(created_at) = ?", today).Count(&stats.Today)
+	database.DB.Model(sample).
+		Select(`
+			COUNT(*) as total,
+			COALESCE(SUM(CASE WHEN success THEN 1 ELSE 0 END), 0) as success,
+			COALESCE(SUM(CASE WHEN NOT success THEN 1 ELSE 0 END), 0) as failed,
+			COALESCE(SUM(CASE WHEN created_at >= ? AND created_at < ? THEN 1 ELSE 0 END), 0) as today
+		`, todayStart, tomorrowStart).
+		Scan(&stats)
 
 	c.JSON(http.StatusOK, stats)
 }
