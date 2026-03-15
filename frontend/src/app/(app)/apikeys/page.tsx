@@ -64,8 +64,10 @@ export default function APIKeysPage() {
     try {
       const result = await api.createAPIKey(services);
       setLatestCreatedKey(result.key);
-      navigator.clipboard.writeText(result.key);
-      toast.success('API Key 创建成功，已复制到剪贴板');
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(result.key);
+      }
+      toast.success('API Key 创建成功' + (navigator.clipboard?.writeText ? '，已复制到剪贴板' : '，请手动复制保存 Key'));
       setDialogOpen(false);
       setServiceMode('all');
       setSelectedChannels(new Set());
@@ -124,8 +126,12 @@ export default function APIKeysPage() {
   };
 
   const copyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast.success('已复制');
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(key);
+      toast.success('已复制');
+    } else {
+      toast.error('当前环境不支持剪贴板操作');
+    }
   };
 
   const formatServices = (s: string) => {
