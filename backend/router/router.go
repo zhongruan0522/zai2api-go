@@ -134,8 +134,14 @@ func registerAPIKeyRoutes(rg *gin.RouterGroup) {
 }
 
 func registerLogRoutes(rg *gin.RouterGroup) {
-	rg.GET("/logs", handlers.GetRequestLogs)
-	rg.GET("/logs/stats", handlers.GetRequestLogStats)
+	rg.GET("/logs/ocr", handlers.GetOCRLogs)
+	rg.GET("/logs/ocr/stats", handlers.GetOCRLogStats)
+	rg.GET("/logs/audio", handlers.GetAudioLogs)
+	rg.GET("/logs/audio/stats", handlers.GetAudioLogStats)
+	rg.GET("/logs/chat", handlers.GetChatLogs)
+	rg.GET("/logs/chat/stats", handlers.GetChatLogStats)
+	rg.GET("/logs/image", handlers.GetImageLogs)
+	rg.GET("/logs/image/stats", handlers.GetImageLogStats)
 }
 
 func serveFrontend(r *gin.Engine) {

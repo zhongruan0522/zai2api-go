@@ -11,6 +11,7 @@ import (
 	"zai2api-go/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // APIKeyCreateRequest 创建 API Key 请求
@@ -120,10 +121,27 @@ func BatchToggleAPIKeys(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"updated": len(req.IDs)})
 }
 
-// GetRequestLogs 获取请求日志
-func GetRequestLogs(c *gin.Context) {
-	var logs []models.RequestLog
+func GetOCRLogs(c *gin.Context) {
+	var logs []models.OCRLog
+	paginateLogs(c, database.DB.Model(&models.OCRLog{}), &logs)
+}
 
+func GetAudioLogs(c *gin.Context) {
+	var logs []models.AudioLog
+	paginateLogs(c, database.DB.Model(&models.AudioLog{}), &logs)
+}
+
+func GetChatLogs(c *gin.Context) {
+	var logs []models.ChatLog
+	paginateLogs(c, database.DB.Model(&models.ChatLog{}), &logs)
+}
+
+func GetImageLogs(c *gin.Context) {
+	var logs []models.ImageLog
+	paginateLogs(c, database.DB.Model(&models.ImageLog{}), &logs)
+}
+
+func paginateLogs(c *gin.Context, query *gorm.DB, result interface{}) {
 	page := 1
 	pageSize := 50
 	const maxPageSize = 200
@@ -141,59 +159,50 @@ func GetRequestLogs(c *gin.Context) {
 		pageSize = maxPageSize
 	}
 
-	channel := c.Query("channel")
-
-	query := database.DB.Model(&models.RequestLog{})
-	if channel != "" {
-		query = query.Where("channel = ?", channel)
-	}
-
 	var total int64
 	query.Count(&total)
-
-	query.Order("id desc").Offset((page - 1) * pageSize).Limit(pageSize).Find(&logs)
+	query.Order("id desc").Offset((page - 1) * pageSize).Limit(pageSize).Find(result)
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":      logs,
+		"data":      result,
 		"total":     total,
 		"page":      page,
 		"page_size": pageSize,
 	})
 }
 
-// GetRequestLogStats 获取请求统计
-func GetRequestLogStats(c *gin.Context) {
-	type Stats struct {
-		Total   int64 `json:"total"`
-		Success int64 `json:"success"`
-		Failed  int64 `json:"failed"`
-		Today   int64 `json:"today"`
-		OCR     int64 `json:"ocr"`
-		Audio   int64 `json:"audio"`
-		Chat    int64 `json:"chat"`
-		Image   int64 `json:"image"`
-	}
+type ChannelStats struct {
+	Total   int64 `json:"total"`
+	Success int64 `json:"success"`
+	Failed  int64 `json:"failed"`
+	Today   int64 `json:"today"`
+}
 
-	var stats Stats
+func GetOCRLogStats(c *gin.Context) {
+	channelStats(c, &models.OCRLog{})
+}
 
-	// 总数
-	database.DB.Model(&models.RequestLog{}).Count(&stats.Total)
+func GetAudioLogStats(c *gin.Context) {
+	channelStats(c, &models.AudioLog{})
+}
 
-	// 成功数
-	database.DB.Model(&models.RequestLog{}).Where("success = ?", true).Count(&stats.Success)
+func GetChatLogStats(c *gin.Context) {
+	channelStats(c, &models.ChatLog{})
+}
 
-	// 失败数
-	database.DB.Model(&models.RequestLog{}).Where("success = ?", false).Count(&stats.Failed)
+func GetImageLogStats(c *gin.Context) {
+	channelStats(c, &models.ImageLog{})
+}
 
-	// 今日请求数
+func channelStats(c *gin.Context, sample interface{}) {
+	var stats ChannelStats
+
+	database.DB.Model(sample).Count(&stats.Total)
+	database.DB.Model(sample).Where("success = ?", true).Count(&stats.Success)
+	database.DB.Model(sample).Where("success = ?", false).Count(&stats.Failed)
+
 	today := time.Now().Format("2006-01-02")
-	database.DB.Model(&models.RequestLog{}).Where("DATE(created_at) = ?", today).Count(&stats.Today)
-
-	// 按渠道统计
-	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "ocr").Count(&stats.OCR)
-	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "audio").Count(&stats.Audio)
-	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "chat").Count(&stats.Chat)
-	database.DB.Model(&models.RequestLog{}).Where("channel = ?", "image").Count(&stats.Image)
+	database.DB.Model(sample).Where("DATE(created_at) = ?", today).Count(&stats.Today)
 
 	c.JSON(http.StatusOK, stats)
 }

@@ -28,7 +28,7 @@ const menuItems = [
     icon: KeyRound,
   },
   {
-    path: '/logs',
+    path: '/logs/ocr',
     label: '运行日志',
     icon: FileText,
   },
@@ -66,7 +66,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setSidebarOpen(false);
   }, [pathname]);
 
-  const currentPageTitle = menuItems.find((item) => item.path === pathname)?.label || 'Token 管理';
+  const currentPageTitle = menuItems.find((item) => item.path === pathname)?.label
+    || (pathname.startsWith('/logs/') ? '运行日志' : 'Token 管理');
 
   const handleLogout = () => {
     logout();
@@ -111,7 +112,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             )}
             <div className="space-y-1">
               {menuItems.map((item) => {
-                const isActive = pathname === item.path;
+                const isLogItem = item.path.startsWith('/logs');
+                const isActive = isLogItem ? pathname.startsWith('/logs/') : pathname === item.path;
                 const Icon = item.icon;
                 return (
                   <Link

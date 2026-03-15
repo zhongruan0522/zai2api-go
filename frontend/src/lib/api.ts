@@ -254,18 +254,45 @@ class ApiClient {
   }
 
   // Request Logs
-  getLogs(channel?: string, page?: number, pageSize?: number) {
+  getOCRLogs(page?: number, pageSize?: number) {
+    return this.getLogPage('/api/logs/ocr', page, pageSize);
+  }
+
+  getAudioLogs(page?: number, pageSize?: number) {
+    return this.getLogPage('/api/logs/audio', page, pageSize);
+  }
+
+  getChatLogs(page?: number, pageSize?: number) {
+    return this.getLogPage('/api/logs/chat', page, pageSize);
+  }
+
+  getImageLogs(page?: number, pageSize?: number) {
+    return this.getLogPage('/api/logs/image', page, pageSize);
+  }
+
+  private getLogPage(path: string, page?: number, pageSize?: number) {
     const params = new URLSearchParams();
-    if (channel) params.set('channel', channel);
     if (page) params.set('page', String(page));
     if (pageSize) params.set('page_size', String(pageSize));
     return this.request<{ data: LogItem[]; total: number; page: number; page_size: number }>(
-      `/api/logs?${params.toString()}`
+      `${path}?${params.toString()}`
     );
   }
 
-  getLogStats() {
-    return this.request<LogStats>('/api/logs/stats');
+  getOCRLogStats() {
+    return this.request<ChannelStats>('/api/logs/ocr/stats');
+  }
+
+  getAudioLogStats() {
+    return this.request<ChannelStats>('/api/logs/audio/stats');
+  }
+
+  getChatLogStats() {
+    return this.request<ChannelStats>('/api/logs/chat/stats');
+  }
+
+  getImageLogStats() {
+    return this.request<ChannelStats>('/api/logs/image/stats');
   }
 }
 
@@ -292,7 +319,6 @@ export interface LogItem {
   id: number;
   request_id: string;
   created_at: string;
-  channel: string;
   source_ip: string;
   api_key_id: number;
   token_id: number;
@@ -301,15 +327,11 @@ export interface LogItem {
   error_msg: string;
 }
 
-export interface LogStats {
+export interface ChannelStats {
   total: number;
   success: number;
   failed: number;
   today: number;
-  ocr: number;
-  audio: number;
-  chat: number;
-  image: number;
 }
 
 export const api = new ApiClient();

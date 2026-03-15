@@ -84,20 +84,6 @@ type APIKey struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
-// RequestLog 请求日志表
-type RequestLog struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	RequestID string    `json:"request_id" gorm:"index;size:36;not null"` // 请求唯一ID
-	CreatedAt time.Time `json:"created_at"`                               // 请求时间
-	Channel   string    `json:"channel" gorm:"size:20;not null"`          // 渠道：ocr, audio, chat
-	SourceIP  string    `json:"source_ip" gorm:"size:45"`                 // 源IP地址
-	APIKeyID  uint      `json:"api_key_id"`                               // 对应的 API Key ID
-	TokenID   uint      `json:"token_id"`                                 // 使用的上游 Token ID
-	Success   bool      `json:"success"`                                  // 是否成功
-	ErrorCode string    `json:"error_code" gorm:"size:20"`                // 错误码
-	ErrorMsg  string    `json:"error_msg" gorm:"size:500"`                // 错误信息
-}
-
 // TableName 指定表名
 func (AudioToken) TableName() string {
 	return "audio_token"
@@ -117,8 +103,4 @@ func (ImageToken) TableName() string {
 
 func (APIKey) TableName() string {
 	return "api_key"
-}
-
-func (RequestLog) TableName() string {
-	return "request_log"
 }

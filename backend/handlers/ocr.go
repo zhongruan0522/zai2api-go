@@ -36,27 +36,27 @@ func (h *OCRHandler) ProcessOCR(c *gin.Context) {
 
 	apiKeyID, valid := h.validateAPIKey(c)
 	if !valid {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, 0, false, "401", "invalid api key")
+		h.logRequest(requestID, sourceIP, apiKeyID, 0, false, "401", "invalid api key")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid api key"})
 		return
 	}
 
 	token, err := h.tokenSelector.SelectOCRToken()
 	if err != nil {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, 0, false, "503", "no available token")
+		h.logRequest(requestID, sourceIP, apiKeyID, 0, false, "503", "no available token")
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available token"})
 		return
 	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "400", "file required")
+		h.logRequest(requestID, sourceIP, apiKeyID, token.ID, false, "400", "file required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file required"})
 		return
 	}
 	file, err := fileHeader.Open()
 	if err != nil {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "400", "open file failed")
+		h.logRequest(requestID, sourceIP, apiKeyID, token.ID, false, "400", "open file failed")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "open file failed"})
 		return
 	}
@@ -64,20 +64,20 @@ func (h *OCRHandler) ProcessOCR(c *gin.Context) {
 
 	respBody, err := ocr.SendRequest(file, fileHeader.Filename, token.Token, h.maxRespBytes)
 	if err != nil {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "502", err.Error())
+		h.logRequest(requestID, sourceIP, apiKeyID, token.ID, false, "502", err.Error())
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
 
 	var upstreamResp ocr.UpstreamResponse
 	if err = json.Unmarshal(respBody, &upstreamResp); err != nil {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, "500", "parse response failed")
+		h.logRequest(requestID, sourceIP, apiKeyID, token.ID, false, "500", "parse response failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "parse response failed"})
 		return
 	}
 
 	if upstreamResp.Code != 200 {
-		h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, false, fmt.Sprintf("%d", upstreamResp.Code), upstreamResp.Message)
+		h.logRequest(requestID, sourceIP, apiKeyID, token.ID, false, fmt.Sprintf("%d", upstreamResp.Code), upstreamResp.Message)
 		c.JSON(http.StatusOK, gin.H{
 			"code":      upstreamResp.Code,
 			"message":   upstreamResp.Message,
@@ -90,7 +90,7 @@ func (h *OCRHandler) ProcessOCR(c *gin.Context) {
 
 	result := ocr.ConvertResponse(&upstreamResp)
 
-	h.logRequest(requestID, "ocr", sourceIP, apiKeyID, token.ID, true, "", "")
+	h.logRequest(requestID, sourceIP, apiKeyID, token.ID, true, "", "")
 
 	c.JSON(http.StatusOK, result)
 }
@@ -132,19 +132,20 @@ func hasService(servicesStr, service string) bool {
 	return false
 }
 
-func (h *OCRHandler) logRequest(requestID, channel, sourceIP string, apiKeyID, tokenID uint, success bool, errorCode, errorMsg string) {
+func (h *OCRHandler) logRequest(requestID, sourceIP string, apiKeyID, tokenID uint, success bool, errorCode, errorMsg string) {
 	errorCode = truncateString(errorCode, 20)
 	errorMsg = truncateString(errorMsg, 500)
-	log := models.RequestLog{
-		RequestID: requestID,
-		CreatedAt: time.Now(),
-		Channel:   channel,
-		SourceIP:  sourceIP,
-		APIKeyID:  apiKeyID,
-		TokenID:   tokenID,
-		Success:   success,
-		ErrorCode: errorCode,
-		ErrorMsg:  errorMsg,
+	log := models.OCRLog{
+		BaseLog: models.BaseLog{
+			RequestID: requestID,
+			CreatedAt: time.Now(),
+			SourceIP:  sourceIP,
+			APIKeyID:  apiKeyID,
+			TokenID:   tokenID,
+			Success:   success,
+			ErrorCode: errorCode,
+			ErrorMsg:  errorMsg,
+		},
 	}
 	database.DB.Create(&log)
 }

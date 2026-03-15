@@ -34,7 +34,10 @@ func Init(cfg *config.Config) {
 		&models.ChatToken{},
 		&models.ImageToken{},
 		&models.APIKey{},
-		&models.RequestLog{},
+		&models.OCRLog{},
+		&models.AudioLog{},
+		&models.ChatLog{},
+		&models.ImageLog{},
 	); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
