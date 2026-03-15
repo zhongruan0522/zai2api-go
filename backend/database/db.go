@@ -29,13 +29,11 @@ func Init(cfg *config.Config) {
 	// 自动迁移
 	if err = DB.AutoMigrate(
 		&models.User{},
-		&models.AudioToken{},
 		&models.OCRToken{},
 		&models.ChatToken{},
 		&models.ImageToken{},
 		&models.APIKey{},
 		&models.OCRLog{},
-		&models.AudioLog{},
 		&models.ChatLog{},
 		&models.ImageLog{},
 	); err != nil {
@@ -73,7 +71,6 @@ func getEnv(key, defaultValue string) string {
 func migrateTokenColumnSize() {
 	columnType := "character varying(1024)"
 	for _, m := range []struct{ table, column string }{
-		{"audio_token", "token"},
 		{"ocr_token", "token"},
 		{"chat_token", "token"},
 		{"image_token", "token"},
@@ -94,8 +91,6 @@ func migrateTokenColumnSize() {
 func migrateCounterColumnTypes() {
 	desired := "bigint"
 	for _, m := range []struct{ table, column string }{
-		{"audio_token", "total_call_count"},
-		{"audio_token", "daily_call_count"},
 		{"ocr_token", "total_call_count"},
 		{"ocr_token", "daily_call_count"},
 		{"ocr_token", "daily_limit"},

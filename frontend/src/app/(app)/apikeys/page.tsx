@@ -20,7 +20,6 @@ export default function APIKeysPage() {
 
   const ALL_CHANNELS = [
     { key: 'ocr', label: 'OCR', desc: '文字识别' },
-    { key: 'audio', label: 'Audio', desc: '语音识别' },
     { key: 'chat', label: 'Chat', desc: '对话模型' },
     { key: 'image', label: 'Image', desc: '图片生成' },
   ];
@@ -284,7 +283,7 @@ export default function APIKeysPage() {
                     onClick={() => setServiceMode('all')}
                   >
                     <p className="font-medium">全部渠道</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">OCR / Audio / Chat / Image</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">OCR / Chat / Image</p>
                   </button>
                   <button
                     type="button"

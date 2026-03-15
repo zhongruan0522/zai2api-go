@@ -72,7 +72,7 @@ cd frontend && npm run dev
 ### Go 后端模块化规则
 
 - **main.go 只做三件事**：加载配置 → 初始化各模块 → 启动 HTTP 服务，不包含业务逻辑
-- **按职责拆包，不按技术分层堆砌**：新增渠道（如 audio、chat）应各自建包（`audio/`、`chat/`），包内放上游对接、类型定义、响应转换器
+- **按职责拆包，不按技术分层堆砌**：新增渠道（如 chat、image、ocr）应各自建包（`chat/`、`image/`、`ocr/`），包内放上游对接、类型定义、响应转换器
 - **跨渠道共用逻辑放 `common/`**：如定时调度器、通用工具函数
 - **文件命名**：包内文件以功能命名（`converter.go`、`upstream.go`、`types.go`），避免 `utils.go`、`helper.go` 这类模糊命名
 - **handlers/ 只放 HTTP 层**：请求解析、参数校验、响应返回；调用 services 和渠道包完成业务，不直接写上游请求和响应转换

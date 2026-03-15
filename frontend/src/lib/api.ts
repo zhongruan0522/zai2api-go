@@ -63,44 +63,6 @@ class ApiClient {
     return !!this.getToken();
   }
 
-  // Audio Tokens
-  getAudioTokens() {
-    return this.request<TokenItem[]>('/api/tokens/audio');
-  }
-
-  createAudioTokens(tokens: string[]) {
-    return this.request<{ created: number; duplicates: number }>('/api/tokens/audio', {
-      method: 'POST',
-      body: JSON.stringify({ tokens }),
-    });
-  }
-
-  deleteAudioToken(id: number) {
-    return this.request<{ message: string }>(`/api/tokens/audio/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  toggleAudioToken(id: number) {
-    return this.request<TokenItem>(`/api/tokens/audio/${id}/toggle`, {
-      method: 'PUT',
-    });
-  }
-
-  batchDeleteAudioTokens(ids: number[]) {
-    return this.request<{ deleted: number }>('/api/tokens/audio/batch-delete', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    });
-  }
-
-  batchToggleAudioTokens(ids: number[], enable: boolean) {
-    return this.request<{ updated: number }>('/api/tokens/audio/batch-toggle', {
-      method: 'POST',
-      body: JSON.stringify({ ids, enable }),
-    });
-  }
-
   // OCR Tokens
   getOCRTokens() {
     return this.request<TokenItem[]>('/api/tokens/ocr');
@@ -258,10 +220,6 @@ class ApiClient {
     return this.getLogPage('/api/logs/ocr', page, pageSize);
   }
 
-  getAudioLogs(page?: number, pageSize?: number) {
-    return this.getLogPage('/api/logs/audio', page, pageSize);
-  }
-
   getChatLogs(page?: number, pageSize?: number) {
     return this.getLogPage('/api/logs/chat', page, pageSize);
   }
@@ -281,10 +239,6 @@ class ApiClient {
 
   getOCRLogStats() {
     return this.request<ChannelStats>('/api/logs/ocr/stats');
-  }
-
-  getAudioLogStats() {
-    return this.request<ChannelStats>('/api/logs/audio/stats');
   }
 
   getChatLogStats() {

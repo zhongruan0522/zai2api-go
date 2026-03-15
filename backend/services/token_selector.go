@@ -60,34 +60,6 @@ func (s *TokenSelector) IncrementOCRCallCount(tokenID uint) error {
 	}).Error
 }
 
-// SelectAudioToken 随机选择一个可用的 Audio Token
-func (s *TokenSelector) SelectAudioToken() (*models.AudioToken, error) {
-	var tokens []models.AudioToken
-
-	if err := database.DB.Where("enabled = ?", true).Find(&tokens).Error; err != nil {
-		return nil, err
-	}
-
-	if len(tokens) == 0 {
-		return nil, gorm.ErrRecordNotFound
-	}
-
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	selected := tokens[r.Intn(len(tokens))]
-
-	return &selected, nil
-}
-
-// IncrementAudioCallCount 增加 Audio Token 的调用计数
-func (s *TokenSelector) IncrementAudioCallCount(tokenID uint) error {
-	now := time.Now()
-	return database.DB.Model(&models.AudioToken{}).Where("id = ?", tokenID).Updates(map[string]interface{}{
-		"total_call_count": gorm.Expr("total_call_count + 1"),
-		"daily_call_count": gorm.Expr("daily_call_count + 1"),
-		"last_used_at":     &now,
-	}).Error
-}
-
 // SelectChatToken 随机选择一个可用的 Chat Token
 func (s *TokenSelector) SelectChatToken() (*models.ChatToken, error) {
 	var tokens []models.ChatToken
@@ -148,9 +120,6 @@ func (s *TokenSelector) IncrementImageCallCount(tokenID uint) error {
 func ResetDailyCallCount() error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&models.OCRToken{}).Where("1 = 1").Update("daily_call_count", 0).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&models.AudioToken{}).Where("1 = 1").Update("daily_call_count", 0).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&models.ChatToken{}).Where("1 = 1").Update("daily_call_count", 0).Error; err != nil {

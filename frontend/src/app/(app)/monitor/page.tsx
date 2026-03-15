@@ -23,7 +23,7 @@ export default function MonitorPage() {
             服务监控功能开发中
           </p>
           <p className="mt-2 text-xs text-muted-foreground/60">
-            该功能将展示各渠道（Audio / OCR / Chat）的可用性、响应时间和成功率等监控数据
+            该功能将展示各渠道（OCR / Chat / Image）的可用性、响应时间和成功率等监控数据
           </p>
           <span className="mt-4 inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-[11px] text-muted-foreground">
             演示页面 · 功能待实现
@@ -34,9 +34,9 @@ export default function MonitorPage() {
       {/* Channel status placeholders */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {[
-          { name: 'Audio 渠道', color: 'text-blue-600', bgColor: 'bg-blue-100' },
           { name: 'OCR 渠道', color: 'text-violet-600', bgColor: 'bg-violet-100' },
           { name: 'Chat 渠道', color: 'text-teal-600', bgColor: 'bg-teal-100' },
+          { name: 'Image 渠道', color: 'text-orange-600', bgColor: 'bg-orange-100' },
         ].map((channel) => (
           <div key={channel.name} className="rounded-3xl border border-border bg-card p-5">
             <p className="text-sm font-medium text-foreground">{channel.name}</p>

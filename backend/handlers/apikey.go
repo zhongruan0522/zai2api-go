@@ -16,7 +16,7 @@ import (
 
 // APIKeyCreateRequest 创建 API Key 请求
 type APIKeyCreateRequest struct {
-	Services string `json:"services"` // 服务类型：ocr,audio,chat,image 或 * 表示全部
+	Services string `json:"services"` // 服务类型：ocr,chat,image 或 * 表示全部
 }
 
 // APIKeyBatchRequest 批量操作请求
@@ -126,11 +126,6 @@ func GetOCRLogs(c *gin.Context) {
 	paginateLogs(c, database.DB.Model(&models.OCRLog{}), &logs)
 }
 
-func GetAudioLogs(c *gin.Context) {
-	var logs []models.AudioLog
-	paginateLogs(c, database.DB.Model(&models.AudioLog{}), &logs)
-}
-
 func GetChatLogs(c *gin.Context) {
 	var logs []models.ChatLog
 	paginateLogs(c, database.DB.Model(&models.ChatLog{}), &logs)
@@ -180,10 +175,6 @@ type ChannelStats struct {
 
 func GetOCRLogStats(c *gin.Context) {
 	channelStats(c, &models.OCRLog{})
-}
-
-func GetAudioLogStats(c *gin.Context) {
-	channelStats(c, &models.AudioLog{})
 }
 
 func GetChatLogStats(c *gin.Context) {

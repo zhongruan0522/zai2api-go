@@ -95,13 +95,6 @@ func Setup(cfg *config.Config) *gin.Engine {
 }
 
 func registerTokenRoutes(rg *gin.RouterGroup) {
-	rg.GET("/tokens/audio", handlers.GetAudioTokens)
-	rg.POST("/tokens/audio", handlers.CreateAudioTokens)
-	rg.DELETE("/tokens/audio/:id", handlers.DeleteAudioToken)
-	rg.PUT("/tokens/audio/:id/toggle", handlers.ToggleAudioToken)
-	rg.POST("/tokens/audio/batch-delete", handlers.BatchDeleteAudioTokens)
-	rg.POST("/tokens/audio/batch-toggle", handlers.BatchToggleAudioTokens)
-
 	rg.GET("/tokens/ocr", handlers.GetOCRTokens)
 	rg.POST("/tokens/ocr", handlers.CreateOCRTokens)
 	rg.DELETE("/tokens/ocr/:id", handlers.DeleteOCRToken)
@@ -136,8 +129,6 @@ func registerAPIKeyRoutes(rg *gin.RouterGroup) {
 func registerLogRoutes(rg *gin.RouterGroup) {
 	rg.GET("/logs/ocr", handlers.GetOCRLogs)
 	rg.GET("/logs/ocr/stats", handlers.GetOCRLogStats)
-	rg.GET("/logs/audio", handlers.GetAudioLogs)
-	rg.GET("/logs/audio/stats", handlers.GetAudioLogStats)
 	rg.GET("/logs/chat", handlers.GetChatLogs)
 	rg.GET("/logs/chat/stats", handlers.GetChatLogStats)
 	rg.GET("/logs/image", handlers.GetImageLogs)

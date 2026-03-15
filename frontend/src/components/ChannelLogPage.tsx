@@ -8,11 +8,10 @@ import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [10, 50, 100];
 
-type Channel = 'ocr' | 'audio' | 'chat' | 'image';
+type Channel = 'ocr' | 'chat' | 'image';
 
 const CHANNEL_LABELS: Record<Channel, string> = {
   ocr: 'OCR',
-  audio: 'Audio',
   chat: 'Chat',
   image: 'Image',
 };
@@ -89,7 +88,7 @@ export default function ChannelLogPage({ channel, fetchLogs, fetchStats }: Chann
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        {(['ocr', 'audio', 'chat', 'image'] as Channel[]).map((ch) => (
+        {(['ocr', 'chat', 'image'] as Channel[]).map((ch) => (
           <button
             key={ch}
             className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${

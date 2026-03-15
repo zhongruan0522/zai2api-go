@@ -10,10 +10,10 @@ import { toast } from 'sonner';
 import { api, TokenItem } from '@/lib/api';
 import { Plus, Trash2, Power, PowerOff } from 'lucide-react';
 
-type TokenType = 'audio' | 'ocr' | 'chat' | 'image';
+type TokenType = 'ocr' | 'chat' | 'image';
 
 export default function TokensPage() {
-  const [activeTab, setActiveTab] = useState<TokenType>('audio');
+  const [activeTab, setActiveTab] = useState<TokenType>('ocr');
   const [tokens, setTokens] = useState<TokenItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -26,9 +26,6 @@ export default function TokensPage() {
     try {
       let data: TokenItem[];
       switch (activeTab) {
-        case 'audio':
-          data = await api.getAudioTokens();
-          break;
         case 'ocr':
           data = await api.getOCRTokens();
           break;
@@ -68,8 +65,6 @@ export default function TokensPage() {
 
   const createTokensBatch = async (channel: TokenType, tokensList: string[]) => {
     switch (channel) {
-      case 'audio':
-        return api.createAudioTokens(tokensList);
       case 'ocr':
         return api.createOCRTokens(tokensList);
       case 'chat':
@@ -124,9 +119,6 @@ export default function TokensPage() {
   const handleDelete = async (id: number) => {
     try {
       switch (activeTab) {
-        case 'audio':
-          await api.deleteAudioToken(id);
-          break;
         case 'ocr':
           await api.deleteOCRToken(id);
           break;
@@ -152,9 +144,6 @@ export default function TokensPage() {
     try {
       const ids = Array.from(selectedIds);
       switch (activeTab) {
-        case 'audio':
-          await api.batchDeleteAudioTokens(ids);
-          break;
         case 'ocr':
           await api.batchDeleteOCRTokens(ids);
           break;
@@ -175,9 +164,6 @@ export default function TokensPage() {
   const handleToggle = async (id: number, currentEnabled: boolean) => {
     try {
       switch (activeTab) {
-        case 'audio':
-          await api.toggleAudioToken(id);
-          break;
         case 'ocr':
           await api.toggleOCRToken(id);
           break;
@@ -203,9 +189,6 @@ export default function TokensPage() {
     try {
       const ids = Array.from(selectedIds);
       switch (activeTab) {
-        case 'audio':
-          await api.batchToggleAudioTokens(ids, enable);
-          break;
         case 'ocr':
           await api.batchToggleOCRTokens(ids, enable);
           break;
@@ -237,7 +220,6 @@ export default function TokensPage() {
       {/* Tabs for channel selection */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TokenType)}>
         <TabsList>
-          <TabsTrigger value="audio">Audio Token</TabsTrigger>
           <TabsTrigger value="ocr">OCR Token</TabsTrigger>
           <TabsTrigger value="chat">Chat Token</TabsTrigger>
           <TabsTrigger value="image">Image Token</TabsTrigger>

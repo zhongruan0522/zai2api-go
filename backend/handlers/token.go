@@ -42,13 +42,6 @@ type TokenBatchRequest struct {
 	IDs []uint `json:"ids" binding:"required"`
 }
 
-// GetAudioTokens 获取所有 Audio Token
-func GetAudioTokens(c *gin.Context) {
-	var tokens []models.AudioToken
-	database.DB.Order("id desc").Find(&tokens)
-	c.JSON(http.StatusOK, tokens)
-}
-
 // GetOCRTokens 获取所有 OCR Token
 func GetOCRTokens(c *gin.Context) {
 	var tokens []models.OCRToken
@@ -61,51 +54,6 @@ func GetChatTokens(c *gin.Context) {
 	var tokens []models.ChatToken
 	database.DB.Order("id desc").Find(&tokens)
 	c.JSON(http.StatusOK, tokens)
-}
-
-// CreateAudioTokens 批量创建 Audio Token
-func CreateAudioTokens(c *gin.Context) {
-	var req TokenCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if !validateBatchSize(req.Tokens, c) {
-		return
-	}
-
-	now := time.Now()
-	var created []models.AudioToken
-	var duplicates []string
-
-	for _, tokenStr := range req.Tokens {
-		tokenStr = strings.TrimSpace(tokenStr)
-		if tokenStr == "" {
-			continue
-		}
-
-		var existing models.AudioToken
-		if err := database.DB.Where("token = ?", tokenStr).First(&existing).Error; err == nil {
-			duplicates = append(duplicates, tokenStr)
-			continue
-		}
-
-		token := models.AudioToken{
-			Token:      tokenStr,
-			ImportedAt: now,
-			Enabled:    true,
-		}
-		if err := database.DB.Create(&token).Error; err != nil {
-			continue
-		}
-		created = append(created, token)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"created":    len(created),
-		"duplicates": len(duplicates),
-		"data":       created,
-	})
 }
 
 // CreateOCRTokens 批量创建 OCR Token
@@ -198,19 +146,6 @@ func CreateChatTokens(c *gin.Context) {
 	})
 }
 
-// DeleteAudioToken 删除单个 Audio Token
-func DeleteAudioToken(c *gin.Context) {
-	id, ok := parseUintParam(c, "id")
-	if !ok {
-		return
-	}
-	if err := database.DB.Delete(&models.AudioToken{}, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
-}
-
 // DeleteOCRToken 删除单个 OCR Token
 func DeleteOCRToken(c *gin.Context) {
 	id, ok := parseUintParam(c, "id")
@@ -237,17 +172,6 @@ func DeleteChatToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
-// BatchDeleteAudioTokens 批量删除 Audio Token
-func BatchDeleteAudioTokens(c *gin.Context) {
-	var req TokenBatchRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	database.DB.Delete(&models.AudioToken{}, req.IDs)
-	c.JSON(http.StatusOK, gin.H{"deleted": len(req.IDs)})
-}
-
 // BatchDeleteOCRTokens 批量删除 OCR Token
 func BatchDeleteOCRTokens(c *gin.Context) {
 	var req TokenBatchRequest
@@ -268,22 +192,6 @@ func BatchDeleteChatTokens(c *gin.Context) {
 	}
 	database.DB.Delete(&models.ChatToken{}, req.IDs)
 	c.JSON(http.StatusOK, gin.H{"deleted": len(req.IDs)})
-}
-
-// ToggleAudioToken 切换 Audio Token 启用状态
-func ToggleAudioToken(c *gin.Context) {
-	id, ok := parseUintParam(c, "id")
-	if !ok {
-		return
-	}
-	var token models.AudioToken
-	if err := database.DB.First(&token, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-		return
-	}
-	token.Enabled = !token.Enabled
-	database.DB.Save(&token)
-	c.JSON(http.StatusOK, token)
 }
 
 // ToggleOCRToken 切换 OCR Token 启用状态
@@ -316,20 +224,6 @@ func ToggleChatToken(c *gin.Context) {
 	token.Enabled = !token.Enabled
 	database.DB.Save(&token)
 	c.JSON(http.StatusOK, token)
-}
-
-// BatchToggleAudioTokens 批量切换 Audio Token 启用状态
-func BatchToggleAudioTokens(c *gin.Context) {
-	var req struct {
-		IDs    []uint `json:"ids" binding:"required"`
-		Enable bool   `json:"enable"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	database.DB.Model(&models.AudioToken{}).Where("id IN ?", req.IDs).Update("enabled", req.Enable)
-	c.JSON(http.StatusOK, gin.H{"updated": len(req.IDs)})
 }
 
 // BatchToggleOCRTokens 批量切换 OCR Token 启用状态

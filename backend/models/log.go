@@ -22,14 +22,6 @@ func (OCRLog) TableName() string {
 	return "ocr_log"
 }
 
-type AudioLog struct {
-	BaseLog
-}
-
-func (AudioLog) TableName() string {
-	return "audio_log"
-}
-
 type ChatLog struct {
 	BaseLog
 }
