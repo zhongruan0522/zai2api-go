@@ -59,6 +59,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 	{
 		image.Use(limitBodySize(cfg.ImageMaxBodyBytes))
 		image.POST("/images/generations", imageHandler.GenerateImage)
+		image.GET("/models", imageHandler.ListModels)
 	}
 	imageChat := r.Group("/v1")
 	{

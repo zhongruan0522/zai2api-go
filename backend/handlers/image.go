@@ -181,6 +181,35 @@ func extractPromptFromMessages(messages []image.ChatMessage) string {
 	return strings.TrimSpace(messages[len(messages)-1].Content)
 }
 
+func (h *ImageHandler) ListModels(c *gin.Context) {
+	type Model struct {
+		ID      string `json:"id"`
+		Object  string `json:"object"`
+		Created int64  `json:"created"`
+		OwnedBy string `json:"owned_by"`
+	}
+
+	now := time.Now().Unix()
+	models := []Model{
+		{ID: "gemini-3-pro-image", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-1k-1:1", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-1k-3:4", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-1k-4:3", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-1k-9:16", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-1k-16:9", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-2k-1:1", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-2k-3:4", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-2k-4:3", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-2k-9:16", Object: "model", Created: now, OwnedBy: "zai2api"},
+		{ID: "gemini-3-pro-image-2k-16:9", Object: "model", Created: now, OwnedBy: "zai2api"},
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"object": "list",
+		"data":   models,
+	})
+}
+
 func (h *ImageHandler) validateAPIKey(c *gin.Context) (uint, bool) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
